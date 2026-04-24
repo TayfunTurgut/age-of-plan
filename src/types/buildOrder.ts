@@ -40,6 +40,12 @@ export type BuildStep = {
   /** Canonical seconds from the start of the game. */
   timeSeconds?: number;
   notes: { id: string; text: string }[];
+  /**
+   * Optional unit-position tags answering "where should my <unit> be?".
+   * Both `unit` and `location` accept free text; the editor offers
+   * civ-aware autocomplete from `src/data/tagPresets.ts`.
+   */
+  tags?: { id: string; unit: string; location: string }[];
 };
 
 export type BuildOrder = {
