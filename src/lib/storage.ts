@@ -20,25 +20,47 @@ const safeParse = (raw: string | null): BuildOrder | null => {
   try {
     const parsed = JSON.parse(raw) as BuildOrder;
     if (!parsed || typeof parsed !== "object" || typeof parsed.id !== "string") return null;
+    let mutated = false;
     if (Array.isArray(parsed.steps)) {
       for (const step of parsed.steps) {
         if (!step) continue;
-        // Migrate legacy notes (string[]) → { id, text }[] in memory only.
+        // Migrate legacy notes (string[]) → { id, text }[].
         if (Array.isArray(step.notes)) {
-          step.notes = step.notes.map((n: unknown) =>
-            typeof n === "string"
-              ? { id: crypto.randomUUID(), text: n }
-              : (n as { id: string; text: string }),
-          );
+          for (const n of step.notes) {
+            if (typeof n === "string") {
+              mutated = true;
+              break;
+            }
+          }
+          if (mutated) {
+            step.notes = step.notes.map((n: unknown) =>
+              typeof n === "string"
+                ? { id: crypto.randomUUID(), text: n }
+                : (n as { id: string; text: string }),
+            );
+          }
         }
         // Migrate villagerCountManual: default to false, recompute when in auto mode.
         if (typeof step.villagerCountManual !== "boolean") {
           step.villagerCountManual = false;
+          mutated = true;
         }
         if (step.villagerCountManual === false && step.resources) {
           const sum = computeVillagerCount(step.resources);
-          if (step.villagerCount !== sum) step.villagerCount = sum;
+          if (step.villagerCount !== sum) {
+            step.villagerCount = sum;
+            mutated = true;
+          }
         }
+      }
+    }
+    // Persist migrated shape once so subsequent reads skip the work.
+    // Silent migration — do not bump updatedAt.
+    if (mutated && isBrowser()) {
+      try {
+        window.localStorage.setItem(keyFor(parsed.id), JSON.stringify(parsed));
+      } catch {
+        // ignore quota/storage errors — in-memory result is still valid.
       }
     }
     return parsed;
@@ -47,9 +69,6 @@ const safeParse = (raw: string | null): BuildOrder | null => {
   }
 };
 
-// TODO(perf): cache the result of getAllBuildOrders() in-memory and invalidate
-// on saveBuildOrder/deleteBuildOrder. Defer until measured — current scale
-// (a few hundred entries) parses in <2ms on modern devices.
 export const getAllBuildOrders = (): BuildOrder[] => {
   if (!isBrowser()) return [];
   const out: BuildOrder[] = [];

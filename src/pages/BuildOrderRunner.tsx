@@ -158,7 +158,7 @@ const BuildOrderRunner = () => {
           <ChevronLeft className="h-4 w-4" />
         </button>
         <span className="text-xs text-muted-foreground">
-          Step <span className="text-foreground">{stepIdx + 1}</span> / {totalSteps}
+          Step <span className="text-foreground">{totalSteps === 0 ? "—" : stepIdx + 1}</span> / {totalSteps}
         </span>
         <button
           type="button"
