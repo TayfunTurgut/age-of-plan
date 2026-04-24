@@ -104,8 +104,14 @@ const BuildOrderEditor = () => {
 
   const updateBo = (patch: Partial<BuildOrder>) => setBo({ ...bo, ...patch });
 
-  const setStep = (next: BuildStep) =>
-    updateBo({ steps: bo.steps.map((s) => (s.id === next.id ? next : s)) });
+  const setStep = (next: BuildStep) => {
+    // Auto-sync villagerCount from resources unless the step is locked.
+    const synced: BuildStep =
+      next.villagerCountManual === true
+        ? next
+        : { ...next, villagerCount: computeVillagerCount(next.resources) };
+    updateBo({ steps: bo.steps.map((s) => (s.id === synced.id ? synced : s)) });
+  };
 
   const insertStepAt = (idx: number) => {
     const prev = bo.steps[idx - 1];
