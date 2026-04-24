@@ -1,200 +1,177 @@
 # Iteration 9 — Quality polish pass
 
-No new features. Refinement of existing code: keyboard accessibility, mobile touch UX, render performance, error states, and visual micro-polish. **No new files.**
+No new features. Refinement only across accessibility, mobile touch, performance, error states, and visual polish. No changes to data models, DnD behavior, timer logic, importers, or exporters.
+
+---
 
 ## 1. Keyboard accessibility
 
-### `src/index.css` — global focus utility
-Add inside `@layer components`:
+**`src/index.css`** — add a reusable utility:
 ```css
-.focus-ring {
-  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+@layer utilities {
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
 }
 ```
 
-### `src/components/editor/StepCard.tsx`
-- Verify Tab order: age select → vils badge → lock toggle → pop input → time input → resource pills (F→W→G→S→B→optional) → notes (text → delete) → tags (unit → location → delete) → overflow menu. Drag grip stays non-focusable (drag-only, has `aria-hidden` or no tabIndex).
-- Add `.focus-ring` to: lock toggle button, overflow menu trigger, and any custom inline buttons that don't already use shadcn `Button` (which has built-in focus styles).
-- "+ Add Note" and the (existing) "+ Add Step" / "+ Insert Step" buttons: confirm they're real `<button>` elements and add `.focus-ring` if missing.
+**`src/components/editor/StepCard.tsx`**
+- Confirm logical Tab order: age select → vils badge/lock toggle → pop input → time input → resource pills L→R → each note (text → delete) → each tag (unit → location → delete) → overflow menu.
+- Grip handle stays unfocusable (drag-only).
+- Add `.focus-ring` to the lock toggle, delete-note button, delete-tag button, and overflow trigger if missing.
+- Ensure "+ Add Step" / "+ Insert Step" / "+ Add Note" buttons render as proper `<button>` and are reachable.
 
-### `src/components/editor/StepTags.tsx`
-- TagCombobox triggers and the `×` delete button get `.focus-ring`.
-- "+ Add Tag" button gets `.focus-ring` and verified Tab reachability.
+**`src/components/ImportModal.tsx`**
+- Tab order: tab triggers → input/textarea → Import button (already correct via DOM order).
+- Add `onKeyDown` on the aoe4guides URL `Input`: if `e.key === "Enter" && !loading && urlInput.trim()`, call `handleAoe4GuidesImport()`.
+- Escape closes the dialog (already provided by Radix `Dialog`).
 
-### `src/components/ImportModal.tsx`
-- Tab order: tab selector → input/textarea → import button.
-- aoe4guides URL `<input>`: add `onKeyDown` handler — `if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleImport(); }`.
-- Escape-to-close: shadcn `Dialog` already wires this; confirm no `onKeyDown` swallows it.
-- Drop zone: ensure it's a focusable button-like element with `.focus-ring`.
+**`src/pages/BuildOrderRunner.tsx`**
+- Add `.focus-ring` (or inline `focus-visible:ring-2 focus-visible:ring-primary/50`) to prev/next, play/pause, reset, and close buttons so keyboard focus is visible.
 
-### `src/pages/BuildOrderRunner.tsx`
-- Add `.focus-ring` to play/pause, prev/next, reset, and close buttons.
+**`src/components/library/BuildCard.tsx`**
+- Make the card root `tabIndex={0}` with `role="button"`, add `onKeyDown` for Enter/Space → activate primary action (open editor).
+- Apply `.focus-ring` to the card and to each action icon (edit/play/delete) so they are individually reachable via Tab.
 
-### `src/pages/Library.tsx`
-- Search input and filter `Select` triggers: confirm visible focus (shadcn defaults are fine; add `.focus-ring` if anything was overridden).
+**`src/pages/Library.tsx`**
+- Apply `.focus-ring` to the search input and filter dropdowns (shadcn already includes most of this, only fill in gaps).
 
-### `src/components/library/BuildCard.tsx`
-- Make the card root focusable: `tabIndex={0}`, `role="link"` (or wrap content in a real `<Link>`), `onKeyDown` for Enter → navigate to editor.
-- Action icon buttons (edit/play/delete): ensure each is a real `<button>` with `aria-label` and `.focus-ring`.
-- Clicking the card navigates; clicking an action button uses `e.stopPropagation()` so card-level activation doesn't fire.
+**`src/components/NavBar.tsx`**
+- Apply `.focus-ring` to the brand link, Library nav link, and theme toggle button.
 
-### `src/components/NavBar.tsx`
-- Library `NavLink` and theme toggle `Button`: add `.focus-ring` (Button variant already has focus styles, but explicit ring on NavLink anchor).
+**Global rule**: any element using `outline-none` without `focus-visible:` replacement gets `.focus-ring` added.
+
+---
 
 ## 2. Mobile touch refinement
 
-### `src/components/editor/ResourcePill.tsx`
-- Add `inputMode="numeric"` and `pattern="[0-9]*"` to the `<input type="number">` for the iOS numeric keypad.
+**`src/components/editor/ResourcePill.tsx`**
+- Add `inputMode="numeric"` and `pattern="[0-9]*"` to the numeric input for mobile numeric keyboards.
 
-### `src/components/editor/StepCard.tsx`
-- Drag grip handle: expand hit area to ≥44×44 via pseudo-element trick:
+**`src/components/editor/StepCard.tsx`**
+- Note drag handles and step grip: expand hit area to ≥44×44px without altering visible size using a `before:` pseudo-element:
   ```tsx
   className="relative ... before:absolute before:inset-[-12px] before:content-['']"
   ```
-- Note row drag handle: same treatment.
-- Verify `@dnd-kit` `TouchSensor` `activationConstraint: { delay: 150, tolerance: 5 }` is unchanged.
+- Verify the existing `TouchSensor` 150ms delay still works after these wrappers (no logic change, just confirm visually).
 
-### `src/pages/BuildOrderRunner.tsx`
-- Play/pause/prev/next buttons: enforce `min-w-[44px] min-h-[44px]` and add `touch-action: manipulation` on the controls row container to suppress double-tap zoom.
+**`src/pages/BuildOrderRunner.tsx`**
+- Ensure prev/next/play/pause buttons are `min-h-11 min-w-11` (≥44px).
+- Add `touch-action: manipulation` (`className="touch-manipulation"`) on the controls row to prevent double-tap zoom.
 
-### `src/components/ImportModal.tsx`
-- Drop zone copy: change to "Tap to browse or drop a file" so mobile users see a tap affordance (drag events don't fire on touch). Always-visible label, not gated on `isDragging`.
+**`src/components/ImportModal.tsx`**
+- Drop zone copy: change to "Tap to browse or drop a .json file" so it reads correctly on touch (where dragover never fires).
 
-### `src/components/library/BuildCard.tsx`
-- Replace hover-only action visibility with media-aware CSS:
+**`src/components/library/BuildCard.tsx`**
+- Wrap action icons in a `.action-row` element. CSS:
   ```css
-  /* in index.css */
-  .card-actions { opacity: 0; transition: opacity 150ms; }
-  @media (hover: hover) { .group:hover .card-actions { opacity: 1; } }
-  @media (hover: none) { .card-actions { opacity: 1; } }
+  @media (hover: hover) {
+    .group:hover .action-row { opacity: 1; }
+    .action-row { opacity: 0; transition: opacity 150ms; }
+  }
+  @media (hover: none) {
+    .action-row { opacity: 1; }
+  }
   ```
-  Apply `.card-actions` to the action row and `.group` to the card root.
+  Place this in `src/index.css` under a small components layer.
+
+---
 
 ## 3. Performance
 
-### `src/components/editor/StepCard.tsx`
-- Wrap export with `React.memo` + custom comparator:
+**`React.memo` wrapping** with custom comparators:
+- `src/components/editor/StepCard.tsx` — compare `step.id`, `step` ref, `previousVillagerCount`, `index`.
+- `src/components/editor/ResourcePill.tsx` — compare `value`, `iconPath`, error state.
+- `NoteRow` (inside `StepCard.tsx`) — compare `note.id`, `note.text`.
+- `src/components/editor/StepTags.tsx` — compare `step.tags` by ref, `civId`.
+
+**`src/pages/BuildOrderEditor.tsx`**
+- Wrap handlers passed to memoized children with `useCallback` (`setStep`, `deleteStep`, `duplicateStep`, `insertStepAfter`, `addStep`).
+- Verify 500ms debounce; if it feels laggy, reduce to 300ms (decision deferred to test).
+
+**`src/lib/noteRenderer.tsx`**
+- Add a bounded cache keyed by `text`:
   ```ts
-  (prev, next) =>
-    prev.step === next.step &&
-    prev.previousVillagerCount === next.previousVillagerCount &&
-    prev.civ === next.civ &&
-    prev.index === next.index &&
-    prev.onChange === next.onChange &&
-    prev.onDelete === next.onDelete &&
-    prev.onDuplicate === next.onDuplicate &&
-    prev.onInsertAfter === next.onInsertAfter
-  ```
-- Internal `NoteRow` (if defined inline): also wrap in `React.memo` comparing `note.id`, `note.text`, and handler refs.
-
-### `src/components/editor/ResourcePill.tsx`
-- Wrap export in `React.memo` (default shallow comparator — props are primitives + onChange).
-
-### `src/components/editor/StepTags.tsx`
-- Wrap export in `React.memo` comparing `step.tags` by ref, `civId`, and `onUpdate` ref.
-
-### `src/pages/BuildOrderEditor.tsx`
-- Stabilize handlers with `useCallback`:
-  - `setStep`, `deleteStep`, `duplicateStep`, `insertStepAfter`, `addStep`, and any `onChange`/`onUpdate` callbacks passed to `StepCard`.
-- Keep current 500ms autosave debounce. If profiling shows lag, drop to 300ms (do **not** drop preemptively).
-
-### `src/lib/noteRenderer.tsx`
-- Add bounded cache:
-  ```ts
-  const renderCache = new Map<string, ReactNode[]>();
-  const MAX = 200;
-  export const renderNote = (text: string): ReactNode[] => {
-    if (!text) return [];
-    const cached = renderCache.get(text);
-    if (cached) return cached;
-    // ... existing parsing logic builds `out`
-    if (renderCache.size >= MAX) {
-      const firstKey = renderCache.keys().next().value;
-      if (firstKey !== undefined) renderCache.delete(firstKey);
-    }
-    renderCache.set(text, out);
-    return out;
-  };
+  const cache = new Map<string, ReactNode[]>();
+  // inside renderNote: if cache.has(text) return cache.get(text)!;
+  // before set: if (cache.size >= 200) cache.delete(cache.keys().next().value as string);
+  cache.set(text, out);
   ```
 
-### `src/lib/storage.ts`
-- Add a `// TODO: cache getAllBuildOrders results in-memory; invalidate on save/delete` comment above `getAllBuildOrders`. **No implementation now** — defer until measured.
+**`src/lib/storage.ts`**
+- Add a `// TODO` comment noting future in-memory cache opportunity for `getAllBuildOrders()`. No functional change.
+
+---
 
 ## 4. Empty state and error polish
 
-### `src/pages/BuildOrderEditor.tsx`
-- If `getBuildOrder(id)` returns null after mount, render an error card:
-  - Heading: "Build order not found"
-  - Body: "This build order could not be found. It may have been deleted."
-  - Button linking back to `/`.
-- Don't render the editor shell.
+**`src/pages/BuildOrderEditor.tsx`**
+- If the build order fails to load, render a card: heading "Build order not found", body "It may have been deleted from another tab or the link is wrong.", primary button → `/`.
 
-### `src/pages/BuildOrderRunner.tsx`
-- Same treatment when build is missing:
-  - Heading: "Build not found"
-  - Body: "You can close this window."
-  - Button: "Close" (`window.close()`), fallback link to `/`.
+**`src/pages/BuildOrderRunner.tsx`**
+- Same treatment: "Build not found" with a hint "You can close this window."
 
-### `src/pages/BuildOrderPlaceholder.tsx`
-- If `bo` is null, render the same error card pattern instead of a disabled shell.
+**`src/pages/BuildOrderPlaceholder.tsx`**
+- When `bo` is null, render the same error card instead of a disabled UI.
 
-### `src/components/ImportModal.tsx`
-- After successful import, call `toast.success("Build imported successfully")` (sonner) before navigation.
+**`src/components/ImportModal.tsx`**
+- After successful import (inside `applyImport`, before `navigate`), call `toast.success("Build imported successfully")`.
+
+---
 
 ## 5. Visual micro-polish
 
-### `src/components/editor/StepCard.tsx`
-- Age-colored left border: add `transition-colors duration-200` to the border element so age changes animate.
+**`src/components/editor/StepCard.tsx`**
+- Add `transition-colors duration-200` to the age-colored left border so age changes animate.
 
-### `src/pages/BuildOrderRunner.tsx`
-- Progress bar fill: add `transition-all duration-300` for smooth step transitions.
+**`src/pages/BuildOrderRunner.tsx`**
+- Add `transition-all duration-300` to the progress bar fill.
 
-### `src/components/NavBar.tsx`
-- Sun/moon icon swap: wrap icon in a span with `transition-transform duration-200`. Toggle a `rotate-180` class on theme change for a subtle rotate animation. Keep current swap logic — just add the transition wrapper.
+**`src/components/NavBar.tsx`**
+- Wrap the sun/moon icon in a span with `transition-transform duration-200` and toggle `rotate-180` based on theme so the swap rotates instead of popping.
 
-### `src/components/CivFlag.tsx`
-- Image fade-in: add `useState` for `loaded`, set on `onLoad`, apply `opacity-0` initially, `opacity-100` when `loaded`, `transition-opacity duration-300`.
+**`src/components/CivFlag.tsx`**
+- Add `opacity-0` default on the `<img>`; on `onLoad`, set state to add `opacity-100 transition-opacity duration-300`. Falls back gracefully on the gradient placeholder.
 
-### `src/index.css`
-- Add scrollbar styling:
-  ```css
-  @layer base {
-    * { scrollbar-width: thin; scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent; }
-    *::-webkit-scrollbar { width: 8px; height: 8px; }
-    *::-webkit-scrollbar-track { background: transparent; }
-    *::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 4px; }
-    *::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.5); }
+**`src/index.css`** — scrollbars:
+```css
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent;
   }
-  ```
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.4);
+    border-radius: 4px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--primary) / 0.6);
+  }
+}
+```
 
-## 6. Out of scope
-- DnD behavior changes
-- Timer logic
-- Auto-villager-compute logic
-- Theme palette
-- Routing / navigation structure
-- Library or civs.ts data
-- Importer / exporter logic
-- Supabase / server work
-- New components or files
+---
 
-## File summary
+## Files
 
-**Edited (14):**
-- `src/index.css` — `.focus-ring`, `.card-actions` visibility rules, scrollbar styles
-- `src/components/editor/StepCard.tsx` — tab order, focus rings, expanded drag hit area, age border transition, `React.memo`
-- `src/components/editor/ResourcePill.tsx` — `inputMode="numeric"`, `React.memo`
-- `src/components/editor/StepTags.tsx` — focus rings, `React.memo`
-- `src/pages/BuildOrderEditor.tsx` — `useCallback` stabilization, error state for missing build
-- `src/pages/BuildOrderRunner.tsx` — focus rings, 44px touch targets, progress bar transition, error state
-- `src/pages/Library.tsx` — confirm focus visibility on search/filters
-- `src/pages/CivDetail.tsx` — (only if it renders cards directly; otherwise no change — `BuildCard` handles it)
-- `src/components/library/BuildCard.tsx` — focusable card, Enter activation, `.card-actions` class for media-aware visibility, `.focus-ring` on actions
-- `src/components/NavBar.tsx` — focus rings, theme icon rotate transition
-- `src/components/CivFlag.tsx` — image fade-in on load
-- `src/components/ImportModal.tsx` — Enter-to-submit on URL input, mobile-friendly drop zone copy, success toast
-- `src/pages/BuildOrderPlaceholder.tsx` — error state when bo is null
-- `src/lib/noteRenderer.tsx` — bounded 200-entry render cache
-- `src/lib/storage.ts` — TODO comment only
+**Edited**:
+- `src/index.css` — `.focus-ring` utility, `.action-row` hover/touch rules, scrollbar styling.
+- `src/components/editor/StepCard.tsx` — `React.memo`, tab order, expanded grip hit area, age border transition, useCallback-friendly props.
+- `src/components/editor/ResourcePill.tsx` — `React.memo`, `inputMode="numeric"`.
+- `src/components/editor/StepTags.tsx` — `React.memo`.
+- `src/pages/BuildOrderEditor.tsx` — `useCallback` stabilization, error state.
+- `src/pages/BuildOrderRunner.tsx` — focus rings, error state, ≥44px touch targets, `touch-manipulation`, progress transition.
+- `src/pages/Library.tsx` — focus rings on search/filters.
+- `src/components/library/BuildCard.tsx` — `tabIndex`/Enter activation, `.action-row` wrapper, `React.memo`.
+- `src/components/NavBar.tsx` — focus rings, theme icon rotation.
+- `src/components/CivFlag.tsx` — image fade-in.
+- `src/components/ImportModal.tsx` — Enter-to-submit, success toast, mobile-friendly drop zone copy.
+- `src/pages/BuildOrderPlaceholder.tsx` — error state for null `bo`.
+- `src/lib/noteRenderer.tsx` — bounded 200-entry cache.
+- `src/lib/storage.ts` — `// TODO` cache note only.
 
-**New:** none.
+**New**: none.
+
+**Untouched**: data models, DnD logic, timer, importers/exporters, civs.ts, theme palette values.
