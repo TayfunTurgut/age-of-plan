@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   DndContext,
@@ -92,10 +92,18 @@ const BuildOrderEditor = () => {
   if (bo === null) {
     return (
       <main className="page-enter min-h-screen bg-background px-6 py-14">
-        <div className="mx-auto max-w-3xl text-center">
-          <h1 className="font-display text-2xl font-bold text-primary">Build not found</h1>
-          <Link to="/" className="mt-4 inline-block text-sm text-muted-foreground hover:text-primary">
-            ← Back to civs
+        <div className="mx-auto max-w-md rounded-lg border border-border bg-card p-8 text-center">
+          <h1 className="font-display text-2xl font-bold text-primary">
+            Build order not found
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            This build order could not be found. It may have been deleted.
+          </p>
+          <Link
+            to="/"
+            className="focus-ring mt-6 inline-block rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary transition-colors hover:bg-primary/20"
+          >
+            ← Back to civilizations
           </Link>
         </div>
       </main>
