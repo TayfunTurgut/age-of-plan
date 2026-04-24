@@ -210,44 +210,6 @@ const BuildOrderRunner = () => {
         </div>
       </div>
 
-      {/* Timer row */}
-      <div className="flex items-center gap-2 border-b border-border px-3 py-1.5">
-        <span className="font-mono text-sm tabular-nums text-foreground">
-          {formatTime(Math.floor(elapsed))}
-        </span>
-        <div className="ml-auto flex items-center gap-1">
-          <button
-            type="button"
-            aria-label={isRunning ? "Pause" : "Play"}
-            onClick={toggle}
-            className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-          >
-            {isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          </button>
-          <button
-            type="button"
-            aria-label="Reset timer"
-            onClick={() => {
-              reset();
-              setStepIdx(0);
-            }}
-            className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            aria-label={isAutoAdvance ? "Switch to manual mode" : "Switch to auto-advance mode"}
-            onClick={toggleMode}
-            className={cn(
-              "rounded p-1 transition-colors hover:bg-muted/50",
-              isAutoAdvance ? "text-primary" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {isAutoAdvance ? <Timer className="h-4 w-4" /> : <MousePointer className="h-4 w-4" />}
-          </button>
-        </div>
-      </div>
 
       {/* Current step */}
       <div className="flex-1 overflow-y-auto p-3 pb-6">
@@ -378,7 +340,7 @@ const BuildOrderRunner = () => {
       {/* Progress bar */}
       <div className="absolute bottom-0 left-0 h-1 w-full bg-muted">
         <div
-          className="h-full bg-primary transition-all"
+          className="h-full bg-primary transition-[width] duration-300 ease-out"
           style={{ width: `${progressPct}%` }}
         />
       </div>
