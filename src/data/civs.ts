@@ -161,7 +161,7 @@ export const CIVS: Civ[] = [
     tagline: "Varangian Guard • Silver economy • Mercenaries",
     flagColor: { from: "hsl(280 50% 30%)", to: "hsl(0 0% 80%)" },
     // TODO: verify actual filename — may be CivIcon-MacedonianDynastyAoE4.webp
-    flagIcon: "civilization_flag/CivIcon-MacedoniansAoE4.webp",
+    flagIcon: "civilization_flag/CivIcon-MacedonianDynastyAoE4.webp",
   },
   {
     id: "sengoku-daimyo",
@@ -169,8 +169,7 @@ export const CIVS: Civ[] = [
     variantOf: "japanese",
     tagline: "Onna-musha • Castle network • Daimyo tactics",
     flagColor: { from: "hsl(0 80% 38%)", to: "hsl(38 35% 25%)" },
-    // TODO: placeholder using parent civ flag — verify actual filename when available
-    flagIcon: "civilization_flag/CivIcon-JapaneseAoE4.webp",
+    flagIcon: "civilization_flag/CivIcon-SengokuDaimyoAoE4.webp",
   },
   {
     id: "tughluqid",
@@ -178,8 +177,7 @@ export const CIVS: Civ[] = [
     variantOf: "delhi",
     tagline: "Ghazi Raider • Iqta system • Aggressive scholars",
     flagColor: { from: "hsl(150 60% 25%)", to: "hsl(45 70% 50%)" },
-    // TODO: placeholder using parent civ flag — verify actual filename when available
-    flagIcon: "civilization_flag/CivIcon-DelhiAoE4.webp",
+    flagIcon: "civilization_flag/CivIcon-TughlaqDynastyAoE4.webp",
   },
 ];
 
