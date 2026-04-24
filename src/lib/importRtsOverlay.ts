@@ -178,12 +178,21 @@ export const mapStep = (raw: RawStep): BuildStep => {
     timeSeconds = raw.timeSeconds;
   }
 
+  const resources = mapResources(raw.resources);
+  const importedCount = numOr(raw.villager_count ?? raw.villagers ?? raw.villagerCount, 0);
+  const computedSum = computeVillagerCount(resources);
+  // Preserve source-of-truth when a hand-authored count diverges from the
+  // resource breakdown (common for aoe4guides). Otherwise keep auto-mode.
+  const villagerCountManual = importedCount > 0 && importedCount !== computedSum;
+  const villagerCount = villagerCountManual ? importedCount : computedSum;
+
   return {
     id: crypto.randomUUID(),
     age: clampAge(raw.age),
-    villagerCount: numOr(raw.villager_count ?? raw.villagers ?? raw.villagerCount, 0),
+    villagerCount,
+    villagerCountManual,
     populationCount,
-    resources: mapResources(raw.resources),
+    resources,
     timeSeconds,
     notes: mapNotes(raw.notes),
   };
