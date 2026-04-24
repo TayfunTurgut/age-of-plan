@@ -2,7 +2,7 @@ import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Lock, MoreHorizontal, Unlock, Users, X } from "lucide-react";
-import { forwardRef, useState, type CSSProperties } from "react";
+import { forwardRef, memo, useState, type CSSProperties } from "react";
 import type { BuildStep, Resources } from "@/types/buildOrder";
 import type { Civ } from "@/data/civs";
 import { cn } from "@/lib/utils";
@@ -98,7 +98,7 @@ const stepHasContent = (s: BuildStep): boolean => {
   );
 };
 
-export const StepCard = ({
+const StepCardImpl = ({
   step,
   index,
   civ,
@@ -162,7 +162,7 @@ export const StepCard = ({
       ref={overlay ? undefined : setNodeRef}
       style={overlay ? undefined : style}
       className={cn(
-        "relative flex gap-3 border-border bg-card p-3 sm:p-4 border-l-4",
+        "relative flex gap-3 border-border bg-card p-3 sm:p-4 border-l-4 transition-colors duration-200",
         AGE_BORDER[step.age],
         isDragging && !overlay && "opacity-40",
         overlay && "shadow-2xl ring-1 ring-primary/40",
@@ -174,7 +174,7 @@ export const StepCard = ({
         <button
           type="button"
           aria-label="Drag step"
-          className="flex h-10 w-6 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-muted/50 hover:text-foreground active:cursor-grabbing"
+          className="relative flex h-10 w-6 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-muted/50 hover:text-foreground active:cursor-grabbing before:absolute before:-inset-2 before:content-[''] focus-ring"
           {...attributes}
           {...listeners}
         >
@@ -265,7 +265,7 @@ export const StepCard = ({
             <DropdownMenu>
               <DropdownMenuTrigger
                 aria-label="Step actions"
-                className="rounded-md p-1 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                className="focus-ring rounded-md p-1 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </DropdownMenuTrigger>
@@ -363,7 +363,7 @@ export const StepCard = ({
           <button
             type="button"
             onClick={addNote}
-            className="mt-1.5 text-xs text-muted-foreground transition-colors hover:text-primary"
+            className="focus-ring mt-1.5 rounded text-xs text-muted-foreground transition-colors hover:text-primary"
           >
             + Add Note
           </button>
@@ -381,6 +381,8 @@ export const StepCard = ({
     </Card>
   );
 };
+
+export const StepCard = memo(StepCardImpl);
 
 const NotesStaticList = ({ notes }: { notes: Note[] }) => {
   if (notes.length === 0) {
@@ -436,7 +438,7 @@ const NoteRow = ({ note, stepId, index, onCommit, onDelete }: NoteRowProps) => {
       <button
         type="button"
         aria-label="Drag note"
-        className="mt-1 flex h-6 w-4 cursor-grab items-center justify-center rounded text-muted-foreground/50 hover:text-foreground active:cursor-grabbing"
+        className="relative mt-1 flex h-6 w-4 cursor-grab items-center justify-center rounded text-muted-foreground/50 hover:text-foreground active:cursor-grabbing before:absolute before:-inset-2 before:content-[''] focus-ring"
         {...attributes}
         {...listeners}
       >
@@ -456,7 +458,7 @@ const NoteRow = ({ note, stepId, index, onCommit, onDelete }: NoteRowProps) => {
         type="button"
         onClick={onDelete}
         aria-label="Delete note"
-        className="mt-1 rounded p-1 text-muted-foreground hover:bg-muted/50 hover:text-destructive"
+        className="focus-ring mt-1 rounded p-1 text-muted-foreground hover:bg-muted/50 hover:text-destructive"
       >
         <X className="h-4 w-4" />
       </button>
@@ -518,7 +520,7 @@ const VillagerBadge = ({ step, previousVillagerCount, onUpdate }: VillagerBadgeP
               aria-label={isManual ? "Unlock to auto-calculate villagers" : "Lock villager count"}
               aria-pressed={isManual}
               className={cn(
-                "rounded-md p-1 transition-colors hover:bg-muted/50",
+                "focus-ring rounded-md p-1 transition-colors hover:bg-muted/50",
                 isManual ? "text-primary" : "text-muted-foreground/70 hover:text-foreground",
               )}
             >
