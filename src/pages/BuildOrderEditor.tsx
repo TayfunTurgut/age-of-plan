@@ -75,12 +75,12 @@ const BuildOrderEditor = () => {
   const civ = useMemo(() => (bo ? getCiv(bo.civilization) : undefined), [bo]);
 
   if (bo === undefined) {
-    return <main className="min-h-screen bg-background" />;
+    return <main className="page-enter min-h-screen bg-background" />;
   }
 
   if (bo === null) {
     return (
-      <main className="min-h-screen bg-background px-6 py-14">
+      <main className="page-enter min-h-screen bg-background px-6 py-14">
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="font-display text-2xl font-bold text-primary">Build not found</h1>
           <Link to="/" className="mt-4 inline-block text-sm text-muted-foreground hover:text-primary">
@@ -268,7 +268,7 @@ const BuildOrderEditor = () => {
     saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "Saved" : "";
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8 sm:px-6 sm:py-12">
+    <main className="page-enter min-h-screen bg-background px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto max-w-4xl">
         {/* Top bar */}
         <div className="flex items-center justify-between gap-3">

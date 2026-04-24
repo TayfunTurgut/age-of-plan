@@ -1,14 +1,16 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { getAssetUrl } from "@/lib/assets";
 
 export type ResourceKey = "food" | "wood" | "gold" | "stone" | "builder" | "oliveOil" | "silver";
 
-const META: Record<ResourceKey, { label: string; dot: string; full: string }> = {
-  food: { label: "F", dot: "bg-red-500", full: "Food" },
-  wood: { label: "W", dot: "bg-green-600", full: "Wood" },
-  gold: { label: "G", dot: "bg-yellow-500", full: "Gold" },
-  stone: { label: "S", dot: "bg-gray-400", full: "Stone" },
+const META: Record<ResourceKey, { label: string; dot: string; full: string; icon?: string }> = {
+  food: { label: "F", dot: "bg-red-500", full: "Food", icon: "resource/resource_food.png" },
+  wood: { label: "W", dot: "bg-green-600", full: "Wood", icon: "resource/resource_wood.png" },
+  gold: { label: "G", dot: "bg-yellow-500", full: "Gold", icon: "resource/resource_gold.png" },
+  stone: { label: "S", dot: "bg-gray-400", full: "Stone", icon: "resource/resource_stone.png" },
   builder: { label: "B", dot: "bg-blue-500", full: "Builders" },
-  oliveOil: { label: "O", dot: "bg-purple-500", full: "Olive Oil" },
+  oliveOil: { label: "O", dot: "bg-purple-500", full: "Olive Oil", icon: "resource/olive_oil.png" },
   silver: { label: "Sv", dot: "bg-zinc-200", full: "Silver" },
 };
 
@@ -20,6 +22,9 @@ type Props = {
 
 export const ResourcePill = ({ resource, value, onChange }: Props) => {
   const meta = META[resource];
+  const [iconFailed, setIconFailed] = useState(false);
+  const showIcon = Boolean(meta.icon) && !iconFailed;
+
   return (
     <label
       title={meta.full}
@@ -28,7 +33,18 @@ export const ResourcePill = ({ resource, value, onChange }: Props) => {
         "transition-colors focus-within:border-primary",
       )}
     >
-      <span className={cn("h-2.5 w-2.5 rounded-full", meta.dot)} aria-hidden />
+      {showIcon ? (
+        <img
+          src={getAssetUrl(meta.icon!)}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          onError={() => setIconFailed(true)}
+          className="h-4 w-4 object-contain"
+        />
+      ) : (
+        <span className={cn("h-2.5 w-2.5 rounded-full", meta.dot)} aria-hidden />
+      )}
       <span className="text-xs font-medium text-muted-foreground">{meta.label}</span>
       <input
         type="number"

@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import { getCiv } from "@/data/civs";
 import { CivFlag } from "@/components/CivFlag";
+import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { deleteBuildOrder, getBuildOrdersByCiv } from "@/lib/storage";
@@ -30,7 +31,7 @@ const CivDetail = () => {
 
   if (!civ) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-6">
+      <main className="page-enter flex min-h-screen items-center justify-center bg-background px-6">
         <div className="text-center">
           <h1 className="font-display text-3xl font-bold text-primary">Civilization not found</h1>
           <Link to="/" className="mt-4 inline-block text-muted-foreground hover:text-primary">
@@ -47,7 +48,7 @@ const CivDetail = () => {
   };
 
   return (
-    <main className="min-h-screen bg-background px-6 py-10 md:py-14">
+    <main className="page-enter min-h-screen bg-background px-6 py-10 md:py-14">
       <div className="mx-auto max-w-4xl">
         <Link
           to="/"
@@ -58,7 +59,7 @@ const CivDetail = () => {
 
         <header className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <CivFlag civ={civ} size="md" />
+            <CivFlag civ={civ} size="lg" />
             <div>
               <h1 className="font-display text-3xl font-bold text-primary sm:text-4xl">
                 {civ.name}
@@ -118,6 +119,7 @@ const CivDetail = () => {
           )}
         </section>
       </div>
+      <SiteFooter />
     </main>
   );
 };

@@ -2,10 +2,17 @@ import { Link } from "react-router-dom";
 import { CIVS, getCiv } from "@/data/civs";
 import { CivFlag } from "@/components/CivFlag";
 import { Card } from "@/components/ui/card";
+import { SiteFooter } from "@/components/SiteFooter";
 
 const Index = () => {
   return (
-    <main className="min-h-screen bg-background px-6 py-12 md:py-16">
+    <main
+      className="page-enter min-h-screen bg-background px-6 py-12 md:py-16"
+      style={{
+        backgroundImage:
+          "repeating-linear-gradient(135deg, hsl(var(--foreground) / 0.02) 0 1px, transparent 1px 8px)",
+      }}
+    >
       <div className="mx-auto max-w-7xl">
         <header className="mb-10 text-center md:mb-14">
           <h1 className="font-display text-4xl font-bold tracking-wide text-primary sm:text-5xl md:text-6xl">
@@ -20,7 +27,7 @@ const Index = () => {
             return (
               <li key={civ.id}>
                 <Link to={`/civ/${civ.id}`} className="group block h-full">
-                  <Card className="flex h-full items-start gap-4 border-border p-4 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/60 group-hover:shadow-md">
+                  <Card className="flex h-full items-start gap-4 border-border p-4 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/60 group-hover:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.4)]">
                     <CivFlag civ={civ} size="md" />
                     <div className="min-w-0 flex-1">
                       <h2 className="truncate font-display text-xl font-bold text-foreground">
@@ -42,6 +49,7 @@ const Index = () => {
           })}
         </ul>
       </div>
+      <SiteFooter />
     </main>
   );
 };

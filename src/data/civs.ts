@@ -6,6 +6,8 @@ export type Civ = {
   tagline: string;
   /** Two HSL color stops (CSS color values) for the placeholder flag gradient. */
   flagColor: { from: string; to: string };
+  /** Path (relative to ASSET_BASE_URL) to the civ flag icon. */
+  flagIcon: string;
 };
 
 export const CIVS: Civ[] = [
@@ -15,72 +17,84 @@ export const CIVS: Civ[] = [
     name: "English",
     tagline: "Longbowman • Council Hall • Farm bonus",
     flagColor: { from: "hsl(0 70% 45%)", to: "hsl(0 0% 92%)" },
+    flagIcon: "civilization_flag/CivIcon-EnglishAoE4_spacing.png",
   },
   {
     id: "french",
     name: "French",
     tagline: "Royal Knight • Chamber of Commerce • Trade bonus",
     flagColor: { from: "hsl(220 70% 35%)", to: "hsl(45 80% 55%)" },
+    flagIcon: "civilization_flag/CivIcon-FrenchAoE4_spacing.png",
   },
   {
     id: "hre",
     name: "Holy Roman Empire",
     tagline: "Landsknecht • Aachen Chapel • Prelate inspirations",
     flagColor: { from: "hsl(0 0% 12%)", to: "hsl(45 85% 55%)" },
+    flagIcon: "civilization_flag/CivIcon-HREAoE4_spacing.png",
   },
   {
     id: "mongols",
     name: "Mongols",
     tagline: "Mangudai • Steppe Redoubt • Mobile bases",
     flagColor: { from: "hsl(200 65% 45%)", to: "hsl(40 50% 75%)" },
+    flagIcon: "civilization_flag/CivIcon-MongolsAoE4_spacing.png",
   },
   {
     id: "rus",
     name: "Rus",
     tagline: "Streltsy • Kremlin • Hunting cabins",
     flagColor: { from: "hsl(140 35% 30%)", to: "hsl(38 55% 70%)" },
+    flagIcon: "civilization_flag/CivIcon-RusAoE4_spacing.png",
   },
   {
     id: "chinese",
     name: "Chinese",
     tagline: "Zhuge Nu • Imperial Academy • Dynasties",
     flagColor: { from: "hsl(0 75% 40%)", to: "hsl(45 90% 55%)" },
+    flagIcon: "civilization_flag/CivIcon-ChineseAoE4_spacing.png",
   },
   {
     id: "delhi",
     name: "Delhi Sultanate",
     tagline: "War Elephant • Tower of Victory • Free techs",
     flagColor: { from: "hsl(150 55% 30%)", to: "hsl(45 80% 60%)" },
+    flagIcon: "civilization_flag/CivIcon-DelhiAoE4_spacing.png",
   },
   {
     id: "abbasid",
     name: "Abbasid Dynasty",
     tagline: "Camel Archer • House of Wisdom • Golden Age",
     flagColor: { from: "hsl(160 45% 28%)", to: "hsl(45 75% 60%)" },
+    flagIcon: "civilization_flag/CivIcon-AbbasidAoE4_spacing.png",
   },
   {
     id: "ottomans",
     name: "Ottomans",
     tagline: "Janissary • Mehmed Imperial Armory • Military Schools",
     flagColor: { from: "hsl(0 75% 40%)", to: "hsl(0 0% 95%)" },
+    flagIcon: "civilization_flag/CivIcon-OttomansAoE4_spacing.png",
   },
   {
     id: "malians",
     name: "Malians",
     tagline: "Sofa • Farimba Garrison • Gold pits",
     flagColor: { from: "hsl(45 80% 50%)", to: "hsl(25 70% 35%)" },
+    flagIcon: "civilization_flag/CivIcon-MaliansAoE4_spacing.png",
   },
   {
     id: "byzantines",
     name: "Byzantines",
     tagline: "Cataphract • Cistern • Olive Oil economy",
     flagColor: { from: "hsl(280 45% 35%)", to: "hsl(45 85% 60%)" },
+    flagIcon: "civilization_flag/CivIcon-ByzantinesAoE4_spacing.png",
   },
   {
     id: "japanese",
     name: "Japanese",
     tagline: "Samurai • Castle • Bannerman buffs",
     flagColor: { from: "hsl(0 75% 45%)", to: "hsl(0 0% 96%)" },
+    flagIcon: "civilization_flag/CivIcon-JapaneseAoE4_spacing.png",
   },
 
   // Variants (10)
@@ -90,6 +104,7 @@ export const CIVS: Civ[] = [
     variantOf: "abbasid",
     tagline: "Atabeg • Trade Wing • Wing-based decisions",
     flagColor: { from: "hsl(160 50% 22%)", to: "hsl(45 70% 70%)" },
+    flagIcon: "civilization_flag/CivIcon-AyyubidsAoE4_spacing.png",
   },
   {
     id: "zhu-xi",
@@ -97,6 +112,7 @@ export const CIVS: Civ[] = [
     variantOf: "chinese",
     tagline: "Yuan Raider • Shaolin Monastery • Tax bonuses",
     flagColor: { from: "hsl(0 80% 32%)", to: "hsl(45 85% 65%)" },
+    flagIcon: "civilization_flag/CivIcon-ZhuXiLegacyAoE4_spacing.png",
   },
   {
     id: "jeanne-darc",
@@ -104,6 +120,7 @@ export const CIVS: Civ[] = [
     variantOf: "french",
     tagline: "Jeanne hero • Companion units • Levelling hero",
     flagColor: { from: "hsl(220 75% 45%)", to: "hsl(45 90% 70%)" },
+    flagIcon: "civilization_flag/CivIcon-JeanneDArcAoE4_spacing.png",
   },
   {
     id: "order-of-the-dragon",
@@ -111,6 +128,7 @@ export const CIVS: Civ[] = [
     variantOf: "hre",
     tagline: "Dragon Knight • Veteran upgrades • Costlier vils",
     flagColor: { from: "hsl(0 0% 8%)", to: "hsl(0 70% 50%)" },
+    flagIcon: "civilization_flag/CivIcon-OrderOfTheDragonAoE4_spacing.png",
   },
   {
     id: "knights-templar",
@@ -118,6 +136,7 @@ export const CIVS: Civ[] = [
     variantOf: "french",
     tagline: "Templar Knight • Commanderies • Pilgrim economy",
     flagColor: { from: "hsl(0 0% 95%)", to: "hsl(0 75% 45%)" },
+    flagIcon: "civilization_flag/CivIcon-KnightsTemplarAoE4_spacing.png",
   },
   {
     id: "house-of-lancaster",
@@ -125,6 +144,7 @@ export const CIVS: Civ[] = [
     variantOf: "english",
     tagline: "Lancaster Knight • Manors • Garrison bonuses",
     flagColor: { from: "hsl(0 75% 40%)", to: "hsl(38 60% 75%)" },
+    flagIcon: "civilization_flag/CivIcon-HouseOfLancasterAoE4_spacing.png",
   },
   {
     id: "golden-horde",
@@ -132,6 +152,7 @@ export const CIVS: Civ[] = [
     variantOf: "mongols",
     tagline: "Keshik • Yam network • Cavalry mobility",
     flagColor: { from: "hsl(45 90% 55%)", to: "hsl(200 60% 40%)" },
+    flagIcon: "civilization_flag/CivIcon-GoldenHordeAoE4_spacing.png",
   },
   {
     id: "macedonian",
@@ -139,6 +160,8 @@ export const CIVS: Civ[] = [
     variantOf: "byzantines",
     tagline: "Varangian Guard • Silver economy • Mercenaries",
     flagColor: { from: "hsl(280 50% 30%)", to: "hsl(0 0% 80%)" },
+    // TODO: verify actual filename — may be CivIcon-MacedonianDynastyAoE4_spacing.png
+    flagIcon: "civilization_flag/CivIcon-MacedoniansAoE4_spacing.png",
   },
   {
     id: "sengoku-daimyo",
@@ -146,6 +169,8 @@ export const CIVS: Civ[] = [
     variantOf: "japanese",
     tagline: "Onna-musha • Castle network • Daimyo tactics",
     flagColor: { from: "hsl(0 80% 38%)", to: "hsl(38 35% 25%)" },
+    // TODO: placeholder using parent civ flag — verify actual filename when available
+    flagIcon: "civilization_flag/CivIcon-JapaneseAoE4_spacing.png",
   },
   {
     id: "tughluqid",
@@ -153,6 +178,8 @@ export const CIVS: Civ[] = [
     variantOf: "delhi",
     tagline: "Ghazi Raider • Iqta system • Aggressive scholars",
     flagColor: { from: "hsl(150 60% 25%)", to: "hsl(45 70% 50%)" },
+    // TODO: placeholder using parent civ flag — verify actual filename when available
+    flagIcon: "civilization_flag/CivIcon-DelhiAoE4_spacing.png",
   },
 ];
 

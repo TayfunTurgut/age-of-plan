@@ -61,3 +61,20 @@
     @apply bg-background text-foreground font-sans;
   }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes page-fade {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .page-enter {
+    animation: page-fade 220ms ease-out;
+  }
+}

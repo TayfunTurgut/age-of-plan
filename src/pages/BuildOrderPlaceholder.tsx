@@ -19,7 +19,7 @@ const BuildOrderPlaceholder = () => {
   const backLabel = civ ? `Back to ${civ.name}` : "All civilizations";
 
   return (
-    <main className="min-h-screen bg-background px-6 py-10 md:py-14">
+    <main className="page-enter min-h-screen bg-background px-6 py-10 md:py-14">
       <div className="mx-auto max-w-3xl">
         <Link
           to={backHref}
