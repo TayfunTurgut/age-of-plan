@@ -7,11 +7,20 @@ import { getAssetUrl } from "@/lib/assets";
  *
  * Non-matching segments are wrapped in `<span>` to preserve whitespace.
  * Broken images hide themselves via the `onError` handler.
+ *
+ * Results are memoized in a bounded LRU-ish Map keyed by the raw text. The
+ * note renderer is called on every render of the runner / preview, so this
+ * cache avoids re-parsing identical strings on each tick.
  */
 const TOKEN_RE = /@([^@\s]+\.(?:png|webp))@/g;
+const MAX_CACHE = 200;
+const cache = new Map<string, ReactNode[]>();
 
 export const renderNote = (text: string): ReactNode[] => {
   if (!text) return [];
+  const cached = cache.get(text);
+  if (cached) return cached;
+
   const out: ReactNode[] = [];
   let last = 0;
   let i = 0;
@@ -38,5 +47,11 @@ export const renderNote = (text: string): ReactNode[] => {
   if (last < text.length) {
     out.push(<span key={`t-${i++}`}>{text.slice(last)}</span>);
   }
+
+  if (cache.size >= MAX_CACHE) {
+    const firstKey = cache.keys().next().value;
+    if (firstKey !== undefined) cache.delete(firstKey);
+  }
+  cache.set(text, out);
   return out;
 };

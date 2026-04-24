@@ -98,6 +98,47 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
+
+  /* Themed scrollbars. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.4);
+    border-radius: 4px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--primary) / 0.6);
+  }
+}
+
+@layer utilities {
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Card action visibility: hover-reveal on devices with hover, always-on for touch. */
+  .action-row {
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+  .group:hover .action-row,
+  .group:focus-within .action-row {
+    opacity: 1;
+  }
+  @media (hover: none) {
+    .action-row {
+      opacity: 1;
+    }
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
