@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { ArrowRight, X } from "lucide-react";
 import type { BuildStep } from "@/types/buildOrder";
 import { getUnitPresets, LOCATION_PRESETS } from "@/data/tagPresets";
@@ -24,7 +24,7 @@ type Props = {
 const PILL_BASE =
   "inline-flex items-center gap-1.5 rounded-full border border-teal-500/40 bg-teal-500/10 px-2 py-1 text-xs text-teal-700 dark:text-teal-300";
 
-export const StepTags = ({ step, civId, onUpdate }: Props) => {
+const StepTagsImpl = ({ step, civId, onUpdate }: Props) => {
   const tags = step.tags ?? [];
   const [autoFocusId, setAutoFocusId] = useState<string | null>(null);
 
@@ -85,13 +85,15 @@ export const StepTags = ({ step, civId, onUpdate }: Props) => {
       <button
         type="button"
         onClick={add}
-        className="mt-1.5 text-xs text-teal-600/80 transition-colors hover:text-teal-700 dark:text-teal-400/80 dark:hover:text-teal-300"
+        className="focus-ring mt-1.5 rounded text-xs text-teal-600/80 transition-colors hover:text-teal-700 dark:text-teal-400/80 dark:hover:text-teal-300"
       >
         + Add Tag
       </button>
     </div>
   );
 };
+
+export const StepTags = memo(StepTagsImpl);
 
 type ComboboxProps = {
   value: string;

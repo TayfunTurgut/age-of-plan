@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   DndContext,
@@ -85,6 +85,46 @@ const BuildOrderEditor = () => {
 
   const civ = useMemo(() => (bo ? getCiv(bo.civilization) : undefined), [bo]);
 
+  // Stable handlers for memoized children — must be declared before any early
+  // return to obey the rules of hooks.
+  const setStep = useCallback((next: BuildStep) => {
+    setBo((current) => {
+      if (!current) return current;
+      const synced: BuildStep =
+        next.villagerCountManual === true
+          ? next
+          : { ...next, villagerCount: computeVillagerCount(next.resources) };
+      return {
+        ...current,
+        steps: current.steps.map((s) => (s.id === synced.id ? synced : s)),
+      };
+    });
+  }, []);
+
+  const duplicateStep = useCallback((stepId: string) => {
+    setBo((current) => {
+      if (!current) return current;
+      const idx = current.steps.findIndex((s) => s.id === stepId);
+      if (idx < 0) return current;
+      const original = current.steps[idx];
+      const clone: BuildStep = {
+        ...original,
+        id: crypto.randomUUID(),
+        resources: { ...original.resources },
+        notes: original.notes.map((n) => ({ id: crypto.randomUUID(), text: n.text })),
+      };
+      const steps = current.steps.slice();
+      steps.splice(idx + 1, 0, clone);
+      return { ...current, steps };
+    });
+  }, []);
+
+  const deleteStep = useCallback((stepId: string) => {
+    setBo((current) =>
+      current ? { ...current, steps: current.steps.filter((s) => s.id !== stepId) } : current,
+    );
+  }, []);
+
   if (bo === undefined) {
     return <main className="page-enter min-h-screen bg-background" />;
   }
@@ -92,10 +132,18 @@ const BuildOrderEditor = () => {
   if (bo === null) {
     return (
       <main className="page-enter min-h-screen bg-background px-6 py-14">
-        <div className="mx-auto max-w-3xl text-center">
-          <h1 className="font-display text-2xl font-bold text-primary">Build not found</h1>
-          <Link to="/" className="mt-4 inline-block text-sm text-muted-foreground hover:text-primary">
-            ← Back to civs
+        <div className="mx-auto max-w-md rounded-lg border border-border bg-card p-8 text-center">
+          <h1 className="font-display text-2xl font-bold text-primary">
+            Build order not found
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            This build order could not be found. It may have been deleted.
+          </p>
+          <Link
+            to="/"
+            className="focus-ring mt-6 inline-block rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary transition-colors hover:bg-primary/20"
+          >
+            ← Back to civilizations
           </Link>
         </div>
       </main>
@@ -103,15 +151,6 @@ const BuildOrderEditor = () => {
   }
 
   const updateBo = (patch: Partial<BuildOrder>) => setBo({ ...bo, ...patch });
-
-  const setStep = (next: BuildStep) => {
-    // Auto-sync villagerCount from resources unless the step is locked.
-    const synced: BuildStep =
-      next.villagerCountManual === true
-        ? next
-        : { ...next, villagerCount: computeVillagerCount(next.resources) };
-    updateBo({ steps: bo.steps.map((s) => (s.id === synced.id ? synced : s)) });
-  };
 
   const insertStepAt = (idx: number) => {
     const prev = bo.steps[idx - 1];
@@ -122,22 +161,6 @@ const BuildOrderEditor = () => {
   };
 
   const appendStep = () => insertStepAt(bo.steps.length);
-
-  const duplicateStep = (idx: number) => {
-    const original = bo.steps[idx];
-    const clone: BuildStep = {
-      ...original,
-      id: crypto.randomUUID(),
-      resources: { ...original.resources },
-      notes: original.notes.map((n) => ({ id: crypto.randomUUID(), text: n.text })),
-    };
-    const steps = bo.steps.slice();
-    steps.splice(idx + 1, 0, clone);
-    updateBo({ steps });
-  };
-
-  const deleteStep = (idx: number) =>
-    updateBo({ steps: bo.steps.filter((_, i) => i !== idx) });
 
   // ---- Drag helpers ----
 
@@ -404,8 +427,8 @@ const BuildOrderEditor = () => {
                           civ={civ}
                           previousVillagerCount={i > 0 ? bo.steps[i - 1].villagerCount : undefined}
                           onChange={setStep}
-                          onDuplicate={() => duplicateStep(i)}
-                          onDelete={() => deleteStep(i)}
+                          onDuplicate={() => duplicateStep(step.id)}
+                          onDelete={() => deleteStep(step.id)}
                           isOverForeignNote={isOverForeignNote}
                         />
                       </div>

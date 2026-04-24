@@ -78,6 +78,7 @@ export const ImportModal = ({ open, onOpenChange, presetCivId }: Props) => {
       toast.warning("Could not detect civilization. Please set it manually after import.");
     }
     saveBuildOrder(bo);
+    toast.success("Build imported successfully");
     onOpenChange(false);
     navigate(`/build/${bo.id}/edit`);
   };
@@ -166,6 +167,12 @@ export const ImportModal = ({ open, onOpenChange, presetCivId }: Props) => {
                 setUrlInput(e.target.value);
                 setError(null);
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !loading && urlInput.trim()) {
+                  e.preventDefault();
+                  void handleAoe4GuidesImport();
+                }
+              }}
               placeholder="Paste aoe4guides.com URL or build ID"
               disabled={loading}
             />
@@ -206,7 +213,7 @@ export const ImportModal = ({ open, onOpenChange, presetCivId }: Props) => {
               )}
             >
               <Upload className="h-4 w-4" />
-              <span>Drop a .json file or click to browse</span>
+              <span>Tap to browse or drop a .json file</span>
               <input
                 ref={fileInputRef}
                 type="file"

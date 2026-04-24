@@ -107,8 +107,18 @@ const BuildOrderRunner = () => {
 
   if (bo === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Build not found.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-6 text-center">
+        <h1 className="font-display text-lg font-bold text-primary">Build not found</h1>
+        <p className="text-sm text-muted-foreground">
+          You can close this window or return to the library.
+        </p>
+        <button
+          type="button"
+          onClick={() => window.close()}
+          className="focus-ring mt-1 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Close window
+        </button>
       </div>
     );
   }
@@ -137,13 +147,13 @@ const BuildOrderRunner = () => {
       </div>
 
       {/* Step indicator */}
-      <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
+      <div className="flex items-center justify-between border-b border-border px-3 py-1.5 touch-manipulation">
         <button
           type="button"
           aria-label="Previous step"
           disabled={stepIdx === 0}
           onClick={() => setStepIdx((i) => Math.max(0, i - 1))}
-          className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+          className="focus-ring flex h-11 w-11 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -155,14 +165,14 @@ const BuildOrderRunner = () => {
           aria-label="Next step"
           disabled={stepIdx >= totalSteps - 1}
           onClick={() => setStepIdx((i) => Math.min(totalSteps - 1, i + 1))}
-          className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+          className="focus-ring flex h-11 w-11 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
 
       {/* Timer row */}
-      <div className="flex items-center gap-2 border-b border-border px-3 py-1.5">
+      <div className="flex items-center gap-2 border-b border-border px-3 py-1.5 touch-manipulation">
         <span className="font-mono text-sm tabular-nums text-foreground">
           {formatTime(Math.floor(elapsed))}
         </span>
@@ -171,7 +181,7 @@ const BuildOrderRunner = () => {
             type="button"
             aria-label={isRunning ? "Pause" : "Play"}
             onClick={toggle}
-            className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+            className="focus-ring flex h-11 w-11 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             {isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </button>
@@ -182,7 +192,7 @@ const BuildOrderRunner = () => {
               reset();
               setStepIdx(0);
             }}
-            className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+            className="focus-ring flex h-11 w-11 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <RotateCcw className="h-4 w-4" />
           </button>
@@ -191,7 +201,7 @@ const BuildOrderRunner = () => {
             aria-label={isAutoAdvance ? "Switch to manual mode" : "Switch to auto-advance mode"}
             onClick={toggleMode}
             className={cn(
-              "rounded p-1 transition-colors hover:bg-muted/50",
+              "focus-ring flex h-11 w-11 items-center justify-center rounded transition-colors hover:bg-muted/50",
               isAutoAdvance ? "text-primary" : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -199,6 +209,7 @@ const BuildOrderRunner = () => {
           </button>
         </div>
       </div>
+
 
       {/* Current step */}
       <div className="flex-1 overflow-y-auto p-3 pb-6">
@@ -329,7 +340,7 @@ const BuildOrderRunner = () => {
       {/* Progress bar */}
       <div className="absolute bottom-0 left-0 h-1 w-full bg-muted">
         <div
-          className="h-full bg-primary transition-all"
+          className="h-full bg-primary transition-[width] duration-300 ease-out"
           style={{ width: `${progressPct}%` }}
         />
       </div>

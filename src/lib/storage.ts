@@ -47,6 +47,9 @@ const safeParse = (raw: string | null): BuildOrder | null => {
   }
 };
 
+// TODO(perf): cache the result of getAllBuildOrders() in-memory and invalidate
+// on saveBuildOrder/deleteBuildOrder. Defer until measured — current scale
+// (a few hundred entries) parses in <2ms on modern devices.
 export const getAllBuildOrders = (): BuildOrder[] => {
   if (!isBrowser()) return [];
   const out: BuildOrder[] = [];

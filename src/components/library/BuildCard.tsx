@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Pencil, Play, Trash2 } from "lucide-react";
 import type { BuildOrder } from "@/types/buildOrder";
@@ -19,7 +20,7 @@ type Props = {
   hideCiv?: boolean;
 };
 
-export const BuildCard = ({ bo, onDelete, hideCiv = false }: Props) => {
+const BuildCardImpl = ({ bo, onDelete, hideCiv = false }: Props) => {
   const navigate = useNavigate();
   const civ = getCiv(bo.civilization);
 
@@ -44,7 +45,10 @@ export const BuildCard = ({ bo, onDelete, hideCiv = false }: Props) => {
   };
 
   return (
-    <Link to={`/build/${bo.id}`} className="group block h-full">
+    <Link
+      to={`/build/${bo.id}`}
+      className="focus-ring group block h-full rounded-lg"
+    >
       <Card
         className={cn(
           "relative flex h-full flex-col gap-2 border-border p-4 transition-all duration-200",
@@ -82,8 +86,7 @@ export const BuildCard = ({ bo, onDelete, hideCiv = false }: Props) => {
 
         <div
           className={cn(
-            "absolute right-2 top-2 flex gap-1 rounded-md bg-background/70 p-1 backdrop-blur",
-            "opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100",
+            "action-row absolute right-2 top-2 flex gap-1 rounded-md bg-background/70 p-1 backdrop-blur",
           )}
         >
           <Button
@@ -91,7 +94,7 @@ export const BuildCard = ({ bo, onDelete, hideCiv = false }: Props) => {
             variant="ghost"
             size="icon"
             aria-label="Edit"
-            className="h-7 w-7 text-muted-foreground hover:text-primary"
+            className="focus-ring h-7 w-7 text-muted-foreground hover:text-primary"
             onClick={goEdit}
           >
             <Pencil className="h-3.5 w-3.5" />
@@ -101,7 +104,7 @@ export const BuildCard = ({ bo, onDelete, hideCiv = false }: Props) => {
             variant="ghost"
             size="icon"
             aria-label="Open overlay"
-            className="h-7 w-7 text-muted-foreground hover:text-primary"
+            className="focus-ring h-7 w-7 text-muted-foreground hover:text-primary"
             onClick={openOverlay}
           >
             <Play className="h-3.5 w-3.5" />
@@ -111,7 +114,7 @@ export const BuildCard = ({ bo, onDelete, hideCiv = false }: Props) => {
             variant="ghost"
             size="icon"
             aria-label="Delete"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+            className="focus-ring h-7 w-7 text-muted-foreground hover:text-destructive"
             onClick={handleDelete}
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -121,3 +124,5 @@ export const BuildCard = ({ bo, onDelete, hideCiv = false }: Props) => {
     </Link>
   );
 };
+
+export const BuildCard = memo(BuildCardImpl);
