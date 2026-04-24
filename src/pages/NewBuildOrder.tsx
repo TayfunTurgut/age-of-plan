@@ -1,32 +1,31 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getCiv } from "@/data/civs";
-import { Card } from "@/components/ui/card";
+import { createEmptyBuildOrder } from "@/lib/buildOrder";
+import { saveBuildOrder } from "@/lib/storage";
 
+/**
+ * Create-and-redirect: never a persistent page.
+ * Reads `?civ=<id>`, mints a fresh build order, persists it, and forwards
+ * to the editor at `/build/:id/edit`.
+ */
 const NewBuildOrder = () => {
   const [params] = useSearchParams();
-  const civId = params.get("civ") ?? "";
-  const civ = getCiv(civId);
+  const navigate = useNavigate();
 
-  return (
-    <main className="min-h-screen bg-background px-6 py-10 md:py-14">
-      <div className="mx-auto max-w-3xl">
-        <Link
-          to={civ ? `/civ/${civ.id}` : "/"}
-          className="inline-block text-sm text-muted-foreground transition-colors hover:text-primary"
-        >
-          ← Back{civ ? ` to ${civ.name}` : ""}
-        </Link>
+  useEffect(() => {
+    const civId = params.get("civ") ?? "";
+    const civ = getCiv(civId);
+    if (!civ) {
+      navigate("/", { replace: true });
+      return;
+    }
+    const bo = createEmptyBuildOrder(civ.id);
+    saveBuildOrder(bo);
+    navigate(`/build/${bo.id}/edit`, { replace: true });
+  }, [params, navigate]);
 
-        <h1 className="mt-6 font-display text-3xl font-bold text-primary sm:text-4xl">
-          New Build Order{civ ? ` — ${civ.name}` : ""}
-        </h1>
-
-        <Card className="mt-6 border-dashed bg-muted/30 p-8 text-center">
-          <p className="text-muted-foreground">Editor coming soon.</p>
-        </Card>
-      </div>
-    </main>
-  );
+  return <main className="min-h-screen bg-background" />;
 };
 
 export default NewBuildOrder;
