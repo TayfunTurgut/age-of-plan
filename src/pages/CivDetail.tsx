@@ -33,7 +33,7 @@ const CivDetail = () => {
       <main className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="text-center">
           <h1 className="font-display text-3xl font-bold text-primary">Civilization not found</h1>
-          <Link to="/" className="mt-4 inline-block font-serif text-muted-foreground hover:text-primary">
+          <Link to="/" className="mt-4 inline-block text-muted-foreground hover:text-primary">
             ← All civilizations
           </Link>
         </div>
@@ -51,7 +51,7 @@ const CivDetail = () => {
       <div className="mx-auto max-w-4xl">
         <Link
           to="/"
-          className="inline-block font-serif text-sm text-muted-foreground transition-colors hover:text-primary"
+          className="inline-block text-sm text-muted-foreground transition-colors hover:text-primary"
         >
           ← All civilizations
         </Link>
@@ -68,7 +68,7 @@ const CivDetail = () => {
                   Variant of {parent.name}
                 </p>
               )}
-              <p className="mt-1 font-serif text-base text-muted-foreground">{civ.tagline}</p>
+              <p className="mt-1 text-base text-muted-foreground">{civ.tagline}</p>
             </div>
           </div>
           <Button asChild size="lg">
@@ -81,7 +81,7 @@ const CivDetail = () => {
 
           {builds.length === 0 ? (
             <Card className="mt-4 border-dashed bg-muted/30 p-8 text-center">
-              <p className="font-serif text-muted-foreground">
+              <p className="text-muted-foreground">
                 No build orders yet. Create your first one.
               </p>
             </Card>
@@ -94,7 +94,7 @@ const CivDetail = () => {
                       <h3 className="truncate font-display text-lg font-bold text-foreground">
                         {bo.name || "Untitled build"}
                       </h3>
-                      <p className="truncate font-serif text-sm text-muted-foreground">
+                      <p className="truncate text-sm text-muted-foreground">
                         {bo.matchup ? `${bo.matchup} • ` : ""}Updated {formatDate(bo.updatedAt)}
                       </p>
                     </Link>

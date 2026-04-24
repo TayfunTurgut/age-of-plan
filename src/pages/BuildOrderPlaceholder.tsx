@@ -23,7 +23,7 @@ const BuildOrderPlaceholder = () => {
       <div className="mx-auto max-w-3xl">
         <Link
           to={backHref}
-          className="inline-block font-serif text-sm text-muted-foreground transition-colors hover:text-primary"
+          className="inline-block text-sm text-muted-foreground transition-colors hover:text-primary"
         >
           ← {backLabel}
         </Link>
@@ -32,14 +32,14 @@ const BuildOrderPlaceholder = () => {
           <h1 className="font-display text-3xl font-bold text-primary sm:text-4xl">
             {bo?.name || "Build order"}
           </h1>
-          <p className="mt-1 font-serif text-muted-foreground">
+          <p className="mt-1 text-muted-foreground">
             {civ ? civ.name : "Unknown civilization"}
             {bo?.matchup ? ` • ${bo.matchup}` : ""}
           </p>
         </header>
 
         <Card className="mt-6 border-dashed bg-muted/30 p-8 text-center">
-          <p className="font-serif text-muted-foreground">Viewer coming soon.</p>
+          <p className="text-muted-foreground">Viewer coming soon.</p>
         </Card>
       </div>
     </main>
