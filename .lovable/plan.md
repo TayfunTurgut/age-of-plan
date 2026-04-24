@@ -1,86 +1,55 @@
 
-## Iteration 3 — Build Order Editor with Drag-and-Drop (final)
+## Iteration 4 — Drag-and-drop notes (within and between steps)
 
-### Dependencies
-Install: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`.
-
-### New utilities
-
-**`src/lib/time.ts`**
-- `formatTime(seconds?: number): string` → `"m:ss"` or `"—"`.
-- `parseTime(input: string): number | null` → seconds, or `null` if invalid.
-
-**`src/lib/buildOrder.ts`** — single source of truth for construction
-- `createEmptyStep(previousStep?: BuildStep): BuildStep` — fresh `crypto.randomUUID()`, age inherited from `previousStep?.age ?? 1`, vils/pop = 0/undefined, all resources = 0, empty notes.
-- `createEmptyBuildOrder(civId: string): BuildOrder` — fresh UUID, `name: "Untitled build"`, `civilization: civId`, empty `steps`, `createdAt`/`updatedAt = Date.now()`.
-- **Both `NewBuildOrder.tsx` and `BuildOrderEditor.tsx` MUST import these factories — do not inline UUID/timestamp/step construction in the pages.**
-
-### Routing (`src/App.tsx`)
-Above the catch-all:
-```
-<Route path="/build/new" element={<NewBuildOrder />} />
-<Route path="/build/:id" element={<BuildOrderPlaceholder />} />
-<Route path="/build/:id/edit" element={<BuildOrderEditor />} />
+### 1. Notes data model — `src/types/buildOrder.ts`
+Change `BuildStep.notes` from `string[]` to:
+```ts
+notes: { id: string; text: string }[];
 ```
 
-### `src/pages/NewBuildOrder.tsx` — rewritten as create-and-redirect
-- On mount: read `civ` query param. If missing/unknown → `navigate("/", { replace: true })`.
-- Otherwise: `const bo = createEmptyBuildOrder(civId)` → `saveBuildOrder(bo)` → `navigate(\`/build/${bo.id}/edit\`, { replace: true })`.
-- Renders nothing (or a brief skeleton). Never persistent.
+### 2. Factory — `src/lib/buildOrder.ts`
+`createEmptyStep` already returns `notes: []`; just confirm the type matches the new shape. No logic change.
 
-### `src/pages/BuildOrderEditor.tsx` (new) — `/build/:id/edit`
+### 3. Storage migration — `src/lib/storage.ts`
+In `safeParse` (the single read path used by both `getBuildOrder` and `getAllBuildOrders`), after the basic shape check, walk `parsed.steps` and for each step:
+- If `step.notes` contains any plain strings, map each entry to `{ id: crypto.randomUUID(), text: s }`; leave already-shaped entries alone.
 
-**State & autosave**
-- `useState<BuildOrder | null>` loaded once via `getBuildOrder(id)` in `useEffect`. Unknown id → "Build not found" + back link to `/`.
-- `useEffect` watching the build state calls `saveBuildOrder()` debounced 500ms (skip first run after load).
-- `saveStatus: "idle" | "saving" | "saved"` drives a small muted indicator near the top bar.
+Returned object is migrated in memory only — never written back. Next user edit triggers natural autosave.
 
-**Top bar**
-- Back link `← Back to <Civ Name>` → `/civ/<civId>`.
-- Inline-editable Cinzel heading bound to `name` (click → input, blur/Enter commit, Escape revert).
-- Save indicator (small muted text).
-- Compact always-visible inputs row: `author`, `matchup` (placeholder `"e.g. vs French"`), `description`.
+### 4. `StepCard.tsx` — note SortableContext + grip handles
+- Wrap the notes list in a `SortableContext` keyed by `note.id` (vertical strategy). The container `div` gets a `useDroppable` with id `notes:<step.id>` so empty steps are still valid drop targets.
+- Extract a `NoteRow` subcomponent that calls `useSortable({ id: note.id, data: { type: "note", noteId: note.id, sourceStepId: step.id } })`. Layout:
+  - Mini `GripVertical` handle (`h-6 w-4 text-muted-foreground/50`) — only this binds drag listeners.
+  - Existing inline text input (unchanged behaviour).
+  - Existing X delete button (unchanged).
+  - When `isDragging`, render a `border-dashed border-primary/40` placeholder in place.
+- The step's own `useSortable` call gains `data: { type: "step", stepId: step.id }`.
+- Note handlers (`setNote`, `deleteNote`, `addNote`) updated for the new object shape; `addNote` creates `{ id: crypto.randomUUID(), text: "" }` and auto-focuses on empty text.
+- `stepHasContent` updated to read `n.text.trim()`.
+- Empty-notes drop zone: when `step.notes.length === 0`, render a min-height dashed-border block reading "Drop notes here" (muted). Container gets a faint brass border (`ring-1 ring-primary/30`) when a foreign note is hovering — driven by an `isOverForeignNote` prop passed from the editor.
 
-**Step list (drag-and-drop)**
-- Single `DndContext` + `SortableContext` (vertical strategy), items keyed by `step.id`.
-- `useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 }}), useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 }}))`.
-- `DragOverlay` renders a semi-transparent clone of the dragged card.
-- Items animate via `CSS.Transform.toString(transform)` from `@dnd-kit/utilities`.
-- Between each card: thin "+ Insert Step" hit target, `opacity-0 hover:opacity-100`, brass accent. Click inserts a new step at that index (using `createEmptyStep(previousStep)`).
-- Empty state: centered "Add your first step to get started" + "+ Add Step".
-- Bottom: full-width "+ Add Step" button (dashed muted border, brass on hover).
+### 5. `BuildOrderEditor.tsx` — dual-type DndContext
+- Single `DndContext` keeps step-level `SortableContext` as today.
+- Track `activeType: "step" | "note" | null` and `overContainerId: string | null` in `useState`; `activeContainerRef = useRef<string | null>(null)` to dedupe `onDragOver` updates.
+- `onDragStart`: read `active.data.current.type`, set `activeType` and (for notes) `activeContainerRef.current = "notes:" + sourceStepId`.
+- `onDragOver`: if `activeType === "note"`, resolve the over container from `over.data.current` (note → its `sourceStepId`) or `over.id` (droppable container id `notes:<stepId>`). If it differs from `activeContainerRef.current`, optimistically move the dragged note out of the source step's `notes` and append to the target step's `notes`, then update the ref + `overContainerId` state (used to drive the brass border on the hovered step).
+- `onDragEnd`:
+  - `type === "step"`: existing `arrayMove` logic on `bo.steps`.
+  - `type === "note"`: locate the note's current step (post-`onDragOver`) and reorder within that step's `notes` array using `arrayMove` based on `over.id`. Clear `activeType`, `overContainerId`, ref.
+- `onDragCancel`: reset all drag state. Note: because `onDragOver` mutates state optimistically, cancel should restore from a snapshot taken in `onDragStart` (`startSnapshotRef = useRef<BuildStep[] | null>(null)`).
+- `DragOverlay`:
+  - `step` → existing semi-transparent `StepCard` clone.
+  - `note` → compact pill: muted background, single-line truncated text, mini grip icon. Smaller than a step card.
+- Pass `overContainerId` down to each `StepCard` so it can highlight when a foreign note is hovering.
 
-**Step card (`src/components/editor/StepCard.tsx`)**
-- Left edge: lucide `GripVertical` bound to `useSortable`'s `listeners` + `attributes` — only the handle initiates drag.
-- 1-based step index next to/above the grip (muted).
-- Top row of inline-editable fields (commit on blur/Enter, revert on Escape):
-  - **Age**: shadcn `Select` showing `I/II/III/IV` with tooltip → `Dark/Feudal/Castle/Imperial`.
-  - **Vils**: small number input.
-  - **Pop**: small number input, optional (dash when unset).
-  - **Time**: display `m:ss`, edit as `m:ss` text — parsed via `parseTime`; invalid input reverts. Blank → "—".
-- **Resource pills** (`src/components/editor/ResourcePill.tsx`): horizontal `flex flex-wrap` row — colored dot + 1-letter label + number input (default 0).
-  - Always: food (red, F), wood (green, W), gold (yellow, G), stone (gray, S), builder (blue, B).
-  - If `civ.id === "byzantines" || civ.id === "ayyubids"` → also olive oil (purple, O).
-  - If `civ.id === "macedonian"` → also silver (silver/white, Sv).
-- **Notes area**: vertical list. Each row = single-line auto-resizing `textarea` (rows=1, expands on wrap) + `X` delete button. Bottom: small "+ Add Note" — appended note auto-focuses with empty string. No DnD on notes.
-- **Top-right overflow menu** (`MoreHorizontal` → shadcn `DropdownMenu`):
-  - Duplicate Step — clones with fresh `id`, inserts after current.
-  - Delete Step — `window.confirm` only if step has notes or any non-zero resource/vils; otherwise immediate.
-
-**Shared primitive (`src/components/editor/InlineText.tsx`)**
-- Click-to-edit text/number cell: renders styled text by default, swaps to `input` on click/focus, commits on blur/Enter, reverts on Escape. Used for build name, vils, pop, time, and notes.
-
-### Mobile
-- Resource pills wrap to 2 rows (`flex-wrap`).
-- `TouchSensor` 150ms delay prevents input taps from triggering drag.
-- Grip handle ≥ `h-10 w-6` for touch.
+### 6. Visual polish
+- Dragging note source: dashed brass placeholder (`border border-dashed border-primary/40 bg-transparent`).
+- Foreign-note hover on step: notes container gets `ring-1 ring-primary/40` transition.
+- Empty notes drop zone: `min-h-12 rounded-md border border-dashed border-border text-xs text-muted-foreground/70` centered text.
 
 ### Out of scope
-- Note drag-and-drop, runner/timer, import/export, icon-token rendering in notes.
-- No edits to `civs.ts`, `storage.ts`, civ picker, civ detail page.
-- No Supabase / server.
+- Runner/timer, import/export, icon-token rendering, `civs.ts`, civ picker, civ detail. Step drag UX unchanged — only handler internals gain type discrimination. No Supabase/server.
 
 ### File summary
-- **New**: `src/pages/BuildOrderEditor.tsx`, `src/components/editor/StepCard.tsx`, `src/components/editor/ResourcePill.tsx`, `src/components/editor/InlineText.tsx`, `src/lib/time.ts`, `src/lib/buildOrder.ts`.
-- **Rewritten**: `src/pages/NewBuildOrder.tsx` (uses `createEmptyBuildOrder`).
-- **Edited**: `src/App.tsx` (add `/build/:id/edit` route), `package.json` (3 dnd-kit deps).
+- **Edited**: `src/types/buildOrder.ts`, `src/lib/buildOrder.ts`, `src/lib/storage.ts`, `src/pages/BuildOrderEditor.tsx`, `src/components/editor/StepCard.tsx`.
+- **No new files.**
