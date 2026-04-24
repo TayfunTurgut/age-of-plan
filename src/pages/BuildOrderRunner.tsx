@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
+  ArrowRight,
   ChevronLeft,
   ChevronRight,
   MousePointer,
@@ -292,6 +293,33 @@ const BuildOrderRunner = () => {
                 ))}
               </ul>
             )}
+
+            {/* Positions (read-only tags) */}
+            {(() => {
+              const visibleTags = (step.tags ?? []).filter(
+                (t) => t.unit.trim() || t.location.trim(),
+              );
+              if (visibleTags.length === 0) return null;
+              return (
+                <div className="mt-3">
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Positions
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {visibleTags.map((t) => (
+                      <span
+                        key={t.id}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-teal-500/40 bg-teal-500/10 px-2 py-0.5 text-[11px] text-teal-700 dark:text-teal-300"
+                      >
+                        <span>{t.unit || "—"}</span>
+                        <ArrowRight className="h-3 w-3 text-teal-500/70" aria-hidden />
+                        <span>{t.location || "—"}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         ) : (
           <p className="text-center text-sm text-muted-foreground">No steps in this build.</p>
