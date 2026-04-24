@@ -25,7 +25,11 @@ import { createEmptyStep } from "@/lib/buildOrder";
 import { InlineText } from "@/components/editor/InlineText";
 import { StepCard } from "@/components/editor/StepCard";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+const OVERLAY_FEATURES =
+  "width=420,height=520,menubar=no,toolbar=no,location=no,status=no,resizable=yes";
 
 type SaveStatus = "idle" | "saving" | "saved";
 type ActiveType = "step" | "note" | null;
@@ -278,9 +282,19 @@ const BuildOrderEditor = () => {
           >
             ← Back{civ ? ` to ${civ.name}` : ""}
           </Link>
-          <span className="text-xs text-muted-foreground" aria-live="polite">
-            {saveLabel}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground" aria-live="polite">
+              {saveLabel}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(`/build/${bo.id}/run`, "aoe4-overlay", OVERLAY_FEATURES)}
+            >
+              Preview Overlay
+            </Button>
+          </div>
         </div>
 
         {/* Title */}
