@@ -82,6 +82,8 @@ type Props = {
   overlay?: boolean;
   /** True when a note from another step is currently hovering this step. */
   isOverForeignNote?: boolean;
+  /** Villager count of the previous step, used for the +/- delta indicator. */
+  previousVillagerCount?: number;
 };
 
 const stepHasContent = (s: BuildStep): boolean => {
