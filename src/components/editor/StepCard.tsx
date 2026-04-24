@@ -1,7 +1,7 @@
 import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, MoreHorizontal, X } from "lucide-react";
+import { GripVertical, Lock, MoreHorizontal, Unlock, Users, X } from "lucide-react";
 import { forwardRef, useState, type CSSProperties } from "react";
 import type { BuildStep, Resources } from "@/types/buildOrder";
 import type { Civ } from "@/data/civs";
