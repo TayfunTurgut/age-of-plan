@@ -112,14 +112,19 @@ const BuildOrderEditor = () => {
 
   const updateBo = (patch: Partial<BuildOrder>) => setBo({ ...bo, ...patch });
 
-  const setStep = (next: BuildStep) => {
-    // Auto-sync villagerCount from resources unless the step is locked.
-    const synced: BuildStep =
-      next.villagerCountManual === true
-        ? next
-        : { ...next, villagerCount: computeVillagerCount(next.resources) };
-    updateBo({ steps: bo.steps.map((s) => (s.id === synced.id ? synced : s)) });
-  };
+  const setStep = useCallback((next: BuildStep) => {
+    setBo((current) => {
+      if (!current) return current;
+      const synced: BuildStep =
+        next.villagerCountManual === true
+          ? next
+          : { ...next, villagerCount: computeVillagerCount(next.resources) };
+      return {
+        ...current,
+        steps: current.steps.map((s) => (s.id === synced.id ? synced : s)),
+      };
+    });
+  }, []);
 
   const insertStepAt = (idx: number) => {
     const prev = bo.steps[idx - 1];
@@ -131,21 +136,29 @@ const BuildOrderEditor = () => {
 
   const appendStep = () => insertStepAt(bo.steps.length);
 
-  const duplicateStep = (idx: number) => {
-    const original = bo.steps[idx];
-    const clone: BuildStep = {
-      ...original,
-      id: crypto.randomUUID(),
-      resources: { ...original.resources },
-      notes: original.notes.map((n) => ({ id: crypto.randomUUID(), text: n.text })),
-    };
-    const steps = bo.steps.slice();
-    steps.splice(idx + 1, 0, clone);
-    updateBo({ steps });
-  };
+  const duplicateStep = useCallback((stepId: string) => {
+    setBo((current) => {
+      if (!current) return current;
+      const idx = current.steps.findIndex((s) => s.id === stepId);
+      if (idx < 0) return current;
+      const original = current.steps[idx];
+      const clone: BuildStep = {
+        ...original,
+        id: crypto.randomUUID(),
+        resources: { ...original.resources },
+        notes: original.notes.map((n) => ({ id: crypto.randomUUID(), text: n.text })),
+      };
+      const steps = current.steps.slice();
+      steps.splice(idx + 1, 0, clone);
+      return { ...current, steps };
+    });
+  }, []);
 
-  const deleteStep = (idx: number) =>
-    updateBo({ steps: bo.steps.filter((_, i) => i !== idx) });
+  const deleteStep = useCallback((stepId: string) => {
+    setBo((current) =>
+      current ? { ...current, steps: current.steps.filter((s) => s.id !== stepId) } : current,
+    );
+  }, []);
 
   // ---- Drag helpers ----
 
