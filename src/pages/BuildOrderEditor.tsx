@@ -85,6 +85,46 @@ const BuildOrderEditor = () => {
 
   const civ = useMemo(() => (bo ? getCiv(bo.civilization) : undefined), [bo]);
 
+  // Stable handlers for memoized children — must be declared before any early
+  // return to obey the rules of hooks.
+  const setStep = useCallback((next: BuildStep) => {
+    setBo((current) => {
+      if (!current) return current;
+      const synced: BuildStep =
+        next.villagerCountManual === true
+          ? next
+          : { ...next, villagerCount: computeVillagerCount(next.resources) };
+      return {
+        ...current,
+        steps: current.steps.map((s) => (s.id === synced.id ? synced : s)),
+      };
+    });
+  }, []);
+
+  const duplicateStep = useCallback((stepId: string) => {
+    setBo((current) => {
+      if (!current) return current;
+      const idx = current.steps.findIndex((s) => s.id === stepId);
+      if (idx < 0) return current;
+      const original = current.steps[idx];
+      const clone: BuildStep = {
+        ...original,
+        id: crypto.randomUUID(),
+        resources: { ...original.resources },
+        notes: original.notes.map((n) => ({ id: crypto.randomUUID(), text: n.text })),
+      };
+      const steps = current.steps.slice();
+      steps.splice(idx + 1, 0, clone);
+      return { ...current, steps };
+    });
+  }, []);
+
+  const deleteStep = useCallback((stepId: string) => {
+    setBo((current) =>
+      current ? { ...current, steps: current.steps.filter((s) => s.id !== stepId) } : current,
+    );
+  }, []);
+
   if (bo === undefined) {
     return <main className="page-enter min-h-screen bg-background" />;
   }
@@ -112,20 +152,6 @@ const BuildOrderEditor = () => {
 
   const updateBo = (patch: Partial<BuildOrder>) => setBo({ ...bo, ...patch });
 
-  const setStep = useCallback((next: BuildStep) => {
-    setBo((current) => {
-      if (!current) return current;
-      const synced: BuildStep =
-        next.villagerCountManual === true
-          ? next
-          : { ...next, villagerCount: computeVillagerCount(next.resources) };
-      return {
-        ...current,
-        steps: current.steps.map((s) => (s.id === synced.id ? synced : s)),
-      };
-    });
-  }, []);
-
   const insertStepAt = (idx: number) => {
     const prev = bo.steps[idx - 1];
     const fresh = createEmptyStep(prev);
@@ -135,30 +161,6 @@ const BuildOrderEditor = () => {
   };
 
   const appendStep = () => insertStepAt(bo.steps.length);
-
-  const duplicateStep = useCallback((stepId: string) => {
-    setBo((current) => {
-      if (!current) return current;
-      const idx = current.steps.findIndex((s) => s.id === stepId);
-      if (idx < 0) return current;
-      const original = current.steps[idx];
-      const clone: BuildStep = {
-        ...original,
-        id: crypto.randomUUID(),
-        resources: { ...original.resources },
-        notes: original.notes.map((n) => ({ id: crypto.randomUUID(), text: n.text })),
-      };
-      const steps = current.steps.slice();
-      steps.splice(idx + 1, 0, clone);
-      return { ...current, steps };
-    });
-  }, []);
-
-  const deleteStep = useCallback((stepId: string) => {
-    setBo((current) =>
-      current ? { ...current, steps: current.steps.filter((s) => s.id !== stepId) } : current,
-    );
-  }, []);
 
   // ---- Drag helpers ----
 
