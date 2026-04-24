@@ -22,7 +22,7 @@ const NewBuildOrder = () => {
         </h1>
 
         <Card className="mt-6 border-dashed bg-muted/30 p-8 text-center">
-          <p className="font-serif text-muted-foreground">Editor coming soon.</p>
+          <p className="text-muted-foreground">Editor coming soon.</p>
         </Card>
       </div>
     </main>

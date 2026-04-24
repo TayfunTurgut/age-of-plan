@@ -39,7 +39,7 @@ const BuildOrderPlaceholder = () => {
         </header>
 
         <Card className="mt-6 border-dashed bg-muted/30 p-8 text-center">
-          <p className="font-serif text-muted-foreground">Viewer coming soon.</p>
+          <p className="text-muted-foreground">Viewer coming soon.</p>
         </Card>
       </div>
     </main>

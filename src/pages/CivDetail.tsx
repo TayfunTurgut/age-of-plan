@@ -81,7 +81,7 @@ const CivDetail = () => {
 
           {builds.length === 0 ? (
             <Card className="mt-4 border-dashed bg-muted/30 p-8 text-center">
-              <p className="font-serif text-muted-foreground">
+              <p className="text-muted-foreground">
                 No build orders yet. Create your first one.
               </p>
             </Card>
