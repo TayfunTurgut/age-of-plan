@@ -1,5 +1,6 @@
 import type { BuildOrder, BuildStep } from "@/types/buildOrder";
 import { parseTime } from "@/lib/time";
+import { computeVillagerCount } from "@/lib/buildOrder";
 
 /**
  * RTS_Overlay JSON import + canonical civ name round-trip support.
