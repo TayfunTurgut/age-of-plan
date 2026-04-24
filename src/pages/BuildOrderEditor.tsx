@@ -9,6 +9,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
 import {
@@ -16,6 +17,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { GripVertical } from "lucide-react";
 import type { BuildOrder, BuildStep } from "@/types/buildOrder";
 import { getBuildOrder, saveBuildOrder } from "@/lib/storage";
 import { getCiv } from "@/data/civs";
@@ -26,13 +28,18 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type SaveStatus = "idle" | "saving" | "saved";
+type ActiveType = "step" | "note" | null;
 
 const BuildOrderEditor = () => {
   const { id } = useParams<{ id: string }>();
   const [bo, setBo] = useState<BuildOrder | null | undefined>(undefined);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeType, setActiveType] = useState<ActiveType>(null);
+  const [overContainerId, setOverContainerId] = useState<string | null>(null);
   const skipNextSave = useRef(true);
+  const activeContainerRef = useRef<string | null>(null);
+  const startSnapshotRef = useRef<BuildStep[] | null>(null);
 
   // Load once.
   useEffect(() => {
@@ -105,7 +112,7 @@ const BuildOrderEditor = () => {
       ...original,
       id: crypto.randomUUID(),
       resources: { ...original.resources },
-      notes: original.notes.slice(),
+      notes: original.notes.map((n) => ({ id: crypto.randomUUID(), text: n.text })),
     };
     const steps = bo.steps.slice();
     steps.splice(idx + 1, 0, clone);
@@ -115,19 +122,147 @@ const BuildOrderEditor = () => {
   const deleteStep = (idx: number) =>
     updateBo({ steps: bo.steps.filter((_, i) => i !== idx) });
 
-  const onDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
-  const onDragEnd = (e: DragEndEvent) => {
-    setActiveId(null);
-    const { active, over } = e;
-    if (!over || active.id === over.id) return;
-    const from = bo.steps.findIndex((s) => s.id === active.id);
-    const to = bo.steps.findIndex((s) => s.id === over.id);
-    if (from < 0 || to < 0) return;
-    updateBo({ steps: arrayMove(bo.steps, from, to) });
+  // ---- Drag helpers ----
+
+  /** Find which step currently owns a given note id. */
+  const findNoteStepIndex = (steps: BuildStep[], noteId: string): number =>
+    steps.findIndex((s) => s.notes.some((n) => n.id === noteId));
+
+  /** Resolve the destination step id from a drag-over event when dragging a note. */
+  const resolveOverStepId = (over: DragOverEvent["over"]): string | null => {
+    if (!over) return null;
+    const data = over.data.current as
+      | { type?: string; sourceStepId?: string; stepId?: string }
+      | undefined;
+    if (data?.type === "note" && data.sourceStepId) return data.sourceStepId;
+    if (data?.type === "notes-container" && data.stepId) return data.stepId;
+    // Fallback: parse from id like "notes:<stepId>"
+    const idStr = String(over.id);
+    if (idStr.startsWith("notes:")) return idStr.slice("notes:".length);
+    return null;
   };
 
-  const activeStep = activeId ? bo.steps.find((s) => s.id === activeId) : null;
-  const activeIndex = activeId ? bo.steps.findIndex((s) => s.id === activeId) : -1;
+  const onDragStart = (e: DragStartEvent) => {
+    const data = e.active.data.current as { type?: ActiveType; sourceStepId?: string } | undefined;
+    const type = (data?.type as ActiveType) ?? "step";
+    setActiveId(String(e.active.id));
+    setActiveType(type);
+    startSnapshotRef.current = bo.steps;
+    if (type === "note" && data?.sourceStepId) {
+      activeContainerRef.current = data.sourceStepId;
+    } else {
+      activeContainerRef.current = null;
+    }
+  };
+
+  const onDragOver = (e: DragOverEvent) => {
+    if (activeType !== "note") return;
+    const { active, over } = e;
+    if (!over) return;
+    const noteId = String(active.id);
+    const targetStepId = resolveOverStepId(over);
+    if (!targetStepId) return;
+
+    setOverContainerId(targetStepId);
+
+    const sourceStepId = activeContainerRef.current;
+    if (sourceStepId === targetStepId) return;
+
+    // Move the dragged note from source step → target step (append).
+    setBo((current) => {
+      if (!current) return current;
+      const fromIdx = findNoteStepIndex(current.steps, noteId);
+      const toIdx = current.steps.findIndex((s) => s.id === targetStepId);
+      if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return current;
+      const note = current.steps[fromIdx].notes.find((n) => n.id === noteId);
+      if (!note) return current;
+      const steps = current.steps.map((s, i) => {
+        if (i === fromIdx) return { ...s, notes: s.notes.filter((n) => n.id !== noteId) };
+        if (i === toIdx) return { ...s, notes: [...s.notes, note] };
+        return s;
+      });
+      return { ...current, steps };
+    });
+    activeContainerRef.current = targetStepId;
+  };
+
+  const resetDragState = () => {
+    setActiveId(null);
+    setActiveType(null);
+    setOverContainerId(null);
+    activeContainerRef.current = null;
+    startSnapshotRef.current = null;
+  };
+
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    const type = activeType;
+
+    if (type === "step") {
+      if (over && active.id !== over.id) {
+        const from = bo.steps.findIndex((s) => s.id === active.id);
+        const to = bo.steps.findIndex((s) => s.id === over.id);
+        if (from >= 0 && to >= 0) updateBo({ steps: arrayMove(bo.steps, from, to) });
+      }
+      resetDragState();
+      return;
+    }
+
+    if (type === "note") {
+      if (!over) {
+        resetDragState();
+        return;
+      }
+      const noteId = String(active.id);
+      const overData = over.data.current as { type?: string; sourceStepId?: string } | undefined;
+
+      setBo((current) => {
+        if (!current) return current;
+        const stepIdx = findNoteStepIndex(current.steps, noteId);
+        if (stepIdx < 0) return current;
+        const step = current.steps[stepIdx];
+
+        // If dropped on another note in the same step, reorder; otherwise leave as-is
+        // (already appended to target step by onDragOver).
+        if (overData?.type === "note" && overData.sourceStepId) {
+          // Note: data.current still reflects original sourceStepId — find by id instead.
+          const fromIdx = step.notes.findIndex((n) => n.id === noteId);
+          const toIdx = step.notes.findIndex((n) => n.id === String(over.id));
+          if (fromIdx >= 0 && toIdx >= 0 && fromIdx !== toIdx) {
+            const notes = arrayMove(step.notes, fromIdx, toIdx);
+            const steps = current.steps.map((s, i) => (i === stepIdx ? { ...s, notes } : s));
+            return { ...current, steps };
+          }
+        }
+        return current;
+      });
+      resetDragState();
+      return;
+    }
+
+    resetDragState();
+  };
+
+  const onDragCancel = () => {
+    if (startSnapshotRef.current) {
+      setBo((current) => (current ? { ...current, steps: startSnapshotRef.current! } : current));
+    }
+    resetDragState();
+  };
+
+  // ---- Active drag previews ----
+  const activeStep =
+    activeType === "step" && activeId ? bo.steps.find((s) => s.id === activeId) : null;
+  const activeStepIndex =
+    activeType === "step" && activeId ? bo.steps.findIndex((s) => s.id === activeId) : -1;
+  const activeNote = (() => {
+    if (activeType !== "note" || !activeId) return null;
+    for (const s of bo.steps) {
+      const n = s.notes.find((nn) => nn.id === activeId);
+      if (n) return n;
+    }
+    return null;
+  })();
 
   const saveLabel =
     saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "Saved" : "";
@@ -200,40 +335,57 @@ const BuildOrderEditor = () => {
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragStart={onDragStart}
+              onDragOver={onDragOver}
               onDragEnd={onDragEnd}
-              onDragCancel={() => setActiveId(null)}
+              onDragCancel={onDragCancel}
             >
               <SortableContext
                 items={bo.steps.map((s) => s.id)}
                 strategy={verticalListSortingStrategy}
               >
                 <div className="flex flex-col">
-                  {bo.steps.map((step, i) => (
-                    <div key={step.id}>
-                      {i > 0 && <InsertHere onClick={() => insertStepAt(i)} />}
-                      <StepCard
-                        step={step}
-                        index={i}
-                        civ={civ}
-                        onChange={setStep}
-                        onDuplicate={() => duplicateStep(i)}
-                        onDelete={() => deleteStep(i)}
-                      />
-                    </div>
-                  ))}
+                  {bo.steps.map((step, i) => {
+                    const sourceStepId =
+                      activeType === "note" && activeId
+                        ? bo.steps.find((s) => s.notes.some((n) => n.id === activeId))?.id
+                        : undefined;
+                    const isOverForeignNote =
+                      activeType === "note" &&
+                      overContainerId === step.id &&
+                      sourceStepId !== step.id;
+                    return (
+                      <div key={step.id}>
+                        {i > 0 && <InsertHere onClick={() => insertStepAt(i)} />}
+                        <StepCard
+                          step={step}
+                          index={i}
+                          civ={civ}
+                          onChange={setStep}
+                          onDuplicate={() => duplicateStep(i)}
+                          onDelete={() => deleteStep(i)}
+                          isOverForeignNote={isOverForeignNote}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               </SortableContext>
               <DragOverlay>
                 {activeStep ? (
                   <StepCard
                     step={activeStep}
-                    index={activeIndex}
+                    index={activeStepIndex}
                     civ={civ}
                     onChange={() => {}}
                     onDuplicate={() => {}}
                     onDelete={() => {}}
                     overlay
                   />
+                ) : activeNote ? (
+                  <div className="flex max-w-md items-center gap-2 rounded-md border border-primary/40 bg-card px-3 py-2 text-sm shadow-2xl">
+                    <GripVertical className="h-3 w-3 text-muted-foreground/70" />
+                    <span className="truncate">{activeNote.text || "Empty note"}</span>
+                  </div>
                 ) : null}
               </DragOverlay>
             </DndContext>
