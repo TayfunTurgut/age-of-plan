@@ -18,8 +18,9 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Download, GripVertical } from "lucide-react";
+import { toast } from "sonner";
 import type { BuildOrder, BuildStep } from "@/types/buildOrder";
-import { getBuildOrder, saveBuildOrder } from "@/lib/storage";
+import { getBuildOrder, saveBuildOrder, StorageQuotaError } from "@/lib/storage";
 import { getCiv } from "@/data/civs";
 import { computeVillagerCount, createEmptyStep } from "@/lib/buildOrder";
 import { exportAsJson, exportAsRtsOverlay } from "@/lib/exportBuildOrder";
@@ -40,6 +41,28 @@ const OVERLAY_FEATURES =
 
 type SaveStatus = "idle" | "saving" | "saved";
 type ActiveType = "step" | "note" | null;
+
+/**
+ * Shape that sortable items in the editor advertise on their drag data.
+ * `type` is the only field we always expect; the others depend on context.
+ */
+type DragData = {
+  type?: "step" | "note" | "notes-container";
+  sourceStepId?: string;
+  stepId?: string;
+};
+
+const readDragData = (data: unknown): DragData | null => {
+  if (!data || typeof data !== "object") return null;
+  const obj = data as Record<string, unknown>;
+  const out: DragData = {};
+  if (obj.type === "step" || obj.type === "note" || obj.type === "notes-container") {
+    out.type = obj.type;
+  }
+  if (typeof obj.sourceStepId === "string") out.sourceStepId = obj.sourceStepId;
+  if (typeof obj.stepId === "string") out.stepId = obj.stepId;
+  return out;
+};
 
 const BuildOrderEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -72,8 +95,20 @@ const BuildOrderEditor = () => {
     }
     setSaveStatus("saving");
     const t = setTimeout(() => {
-      saveBuildOrder(bo);
-      setSaveStatus("saved");
+      try {
+        saveBuildOrder(bo);
+        setSaveStatus("saved");
+      } catch (err) {
+        setSaveStatus("idle");
+        if (err instanceof StorageQuotaError) {
+          toast.error(err.message, {
+            description: "Delete unused builds from the library and try again.",
+          });
+        } else {
+          toast.error("Could not save build. See the console for details.");
+          console.error("[saveBuildOrder]", err);
+        }
+      }
     }, 500);
     return () => clearTimeout(t);
   }, [bo]);
@@ -84,6 +119,8 @@ const BuildOrderEditor = () => {
   );
 
   const civ = useMemo(() => (bo ? getCiv(bo.civilization) : undefined), [bo]);
+
+  const stepIds = useMemo(() => bo?.steps.map((s) => s.id) ?? [], [bo?.steps]);
 
   // Stable handlers for memoized children — must be declared before any early
   // return to obey the rules of hooks.
@@ -171,9 +208,7 @@ const BuildOrderEditor = () => {
   /** Resolve the destination step id from a drag-over event when dragging a note. */
   const resolveOverStepId = (over: DragOverEvent["over"]): string | null => {
     if (!over) return null;
-    const data = over.data.current as
-      | { type?: string; sourceStepId?: string; stepId?: string }
-      | undefined;
+    const data = readDragData(over.data.current);
     if (data?.type === "note" && data.sourceStepId) return data.sourceStepId;
     if (data?.type === "notes-container" && data.stepId) return data.stepId;
     // Fallback: parse from id like "notes:<stepId>"
@@ -183,8 +218,8 @@ const BuildOrderEditor = () => {
   };
 
   const onDragStart = (e: DragStartEvent) => {
-    const data = e.active.data.current as { type?: ActiveType; sourceStepId?: string } | undefined;
-    const type = (data?.type as ActiveType) ?? "step";
+    const data = readDragData(e.active.data.current);
+    const type: ActiveType = data?.type === "note" ? "note" : "step";
     setActiveId(String(e.active.id));
     setActiveType(type);
     startSnapshotRef.current = bo.steps;
@@ -254,7 +289,7 @@ const BuildOrderEditor = () => {
         return;
       }
       const noteId = String(active.id);
-      const overData = over.data.current as { type?: string; sourceStepId?: string } | undefined;
+      const overData = readDragData(over.data.current);
 
       setBo((current) => {
         if (!current) return current;
@@ -404,10 +439,7 @@ const BuildOrderEditor = () => {
               onDragEnd={onDragEnd}
               onDragCancel={onDragCancel}
             >
-              <SortableContext
-                items={bo.steps.map((s) => s.id)}
-                strategy={verticalListSortingStrategy}
-              >
+              <SortableContext items={stepIds} strategy={verticalListSortingStrategy}>
                 <div className="flex flex-col">
                   {bo.steps.map((step, i) => {
                     const sourceStepId =

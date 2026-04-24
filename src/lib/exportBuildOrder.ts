@@ -18,6 +18,24 @@ const triggerDownload = (filename: string, contents: string, mime: string): void
 const safeFilename = (name: string): string =>
   name.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "") || "build_order";
 
+/** Pure serializer for the RTS_Overlay payload shape — exposed so tests
+ *  (and any non-DOM consumers) can use it without triggering a download. */
+export const toRtsOverlayPayload = (bo: BuildOrder) => ({
+  name: bo.name,
+  civilization: civIdToDisplayName(bo.civilization),
+  author: bo.author ?? "",
+  source: bo.source ?? "",
+  description: bo.description ?? "",
+  build_order: bo.steps.map((s) => ({
+    age: s.age,
+    villager_count: s.villagerCount,
+    population_count: s.populationCount ?? -1,
+    resources: { ...s.resources },
+    time: s.timeSeconds !== undefined ? formatTime(s.timeSeconds) : "",
+    notes: s.notes.map((n) => n.text),
+  })),
+});
+
 /** Native lossless export — preserves our internal civ ids and full schema. */
 export const exportAsJson = (bo: BuildOrder): void => {
   const json = JSON.stringify(bo, null, 2);
@@ -27,21 +45,6 @@ export const exportAsJson = (bo: BuildOrder): void => {
 /** RTS_Overlay-shaped export. Civ id is mapped to the canonical display name
  *  so rts-overlay.github.io recognizes it on re-import. */
 export const exportAsRtsOverlay = (bo: BuildOrder): void => {
-  const payload = {
-    name: bo.name,
-    civilization: civIdToDisplayName(bo.civilization),
-    author: bo.author ?? "",
-    source: bo.source ?? "",
-    description: bo.description ?? "",
-    build_order: bo.steps.map((s) => ({
-      age: s.age,
-      villager_count: s.villagerCount,
-      population_count: s.populationCount ?? -1,
-      resources: { ...s.resources },
-      time: s.timeSeconds !== undefined ? formatTime(s.timeSeconds) : "",
-      notes: s.notes.map((n) => n.text),
-    })),
-  };
-  const json = JSON.stringify(payload, null, 2);
+  const json = JSON.stringify(toRtsOverlayPayload(bo), null, 2);
   triggerDownload(`${safeFilename(bo.name)}_rts_overlay.json`, json, "application/json");
 };

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { BuildOrder, BuildStep, Resources } from "@/types/buildOrder";
 import { normalizeCivId } from "./importRtsOverlay";
 import { parseTime } from "@/lib/time";
@@ -113,26 +114,41 @@ const toInt = (v: unknown): number => {
   return 0;
 };
 
-type RawAoe4Step = {
-  age?: number;
-  time?: string;
-  description?: string;
-  food?: string | number;
-  wood?: string | number;
-  gold?: string | number;
-  stone?: string | number;
-  builders?: string | number;
-  villagers?: string | number;
-  oliveOil?: string | number;
-  olive_oil?: string | number;
-  silver?: string | number;
-};
+/**
+ * Loose zod schemas for the aoe4guides.com response. We validate the overall
+ * shape (is it an object? is `steps`/`build_order` an array?) but keep field
+ * parsing forgiving — upstream data mixes strings and numbers, and field-level
+ * normalization happens below in `toInt`, `mapStep`, etc.
+ */
+const StringOrNumber = z.union([z.string(), z.number()]).optional();
 
-type RawAoe4AgeGroup = {
-  age?: number;
-  type?: string;
-  steps?: RawAoe4Step[];
-};
+const RawAoe4StepSchema = z
+  .object({
+    age: z.number().optional(),
+    time: z.string().optional(),
+    description: z.string().optional(),
+    food: StringOrNumber,
+    wood: StringOrNumber,
+    gold: StringOrNumber,
+    stone: StringOrNumber,
+    builders: StringOrNumber,
+    villagers: StringOrNumber,
+    oliveOil: StringOrNumber,
+    olive_oil: StringOrNumber,
+    silver: StringOrNumber,
+  })
+  .passthrough();
+
+const RawAoe4AgeGroupSchema = z
+  .object({
+    age: z.number().optional(),
+    type: z.string().optional(),
+    steps: z.array(RawAoe4StepSchema).optional(),
+  })
+  .passthrough();
+
+type RawAoe4Step = z.infer<typeof RawAoe4StepSchema>;
+type RawAoe4AgeGroup = z.infer<typeof RawAoe4AgeGroupSchema>;
 
 const mapStep = (raw: RawAoe4Step, fallbackAge: 1 | 2 | 3 | 4): BuildStep => {
   const ageNum = typeof raw.age === "number" ? raw.age : fallbackAge;
@@ -195,42 +211,38 @@ const flattenSteps = (groups: RawAoe4AgeGroup[]): BuildStep[] => {
   return out;
 };
 
-type RawAoe4Guides = {
-  title?: string;
-  name?: string;
-  civilization?: string;
-  civ?: string;
-  author?: string;
-  user?: { name?: string };
-  description?: string;
-  steps?: RawAoe4AgeGroup[];
-  build_order?: RawAoe4AgeGroup[];
-};
+const RawAoe4GuidesSchema = z
+  .object({
+    title: z.string().optional(),
+    name: z.string().optional(),
+    civilization: z.string().optional(),
+    civ: z.string().optional(),
+    author: z.string().optional(),
+    user: z.object({ name: z.string().optional() }).passthrough().optional(),
+    description: z.string().optional(),
+    steps: z.array(RawAoe4AgeGroupSchema).optional(),
+    build_order: z.array(RawAoe4AgeGroupSchema).optional(),
+  })
+  .passthrough();
 
-export const fetchAoe4GuidesBuild = async (id: string): Promise<BuildOrder> => {
-  let res: Response;
-  try {
-    res = await fetch(`https://aoe4guides.com/api/builds/${id}`);
-  } catch {
+export type RawAoe4Guides = z.infer<typeof RawAoe4GuidesSchema>;
+
+/**
+ * Parse and normalize an aoe4guides.com payload into a BuildOrder.
+ * Exported separately from `fetchAoe4GuidesBuild` so tests can cover
+ * validation without mocking `fetch`.
+ */
+export const parseAoe4GuidesPayload = (payload: unknown, id: string): BuildOrder => {
+  const result = RawAoe4GuidesSchema.safeParse(payload);
+  if (!result.success) {
     throw new Error(
-      "Could not fetch from aoe4guides.com — CORS may be blocked. Try pasting the build JSON directly instead.",
+      `aoe4guides.com returned a response that doesn't match the expected shape: ${result.error.issues[0]?.message ?? "unknown validation error"}.`,
     );
   }
-
-  if (!res.ok) {
-    if (res.status === 404) throw new Error("Build not found on aoe4guides.com.");
-    throw new Error(`aoe4guides.com returned an error (status ${res.status}).`);
-  }
-
-  let data: RawAoe4Guides;
-  try {
-    data = (await res.json()) as RawAoe4Guides;
-  } catch {
-    throw new Error("aoe4guides.com returned an invalid response.");
-  }
+  const data = result.data;
 
   const rawGroups = (Array.isArray(data.steps) ? data.steps : data.build_order) ?? [];
-  if (!Array.isArray(rawGroups) || rawGroups.length === 0) {
+  if (rawGroups.length === 0) {
     throw new Error("aoe4guides build had no steps.");
   }
 
@@ -252,4 +264,30 @@ export const fetchAoe4GuidesBuild = async (id: string): Promise<BuildOrder> => {
     updatedAt: now,
     steps,
   };
+};
+
+export const fetchAoe4GuidesBuild = async (id: string): Promise<BuildOrder> => {
+  let res: Response;
+  try {
+    res = await fetch(`https://aoe4guides.com/api/builds/${id}`);
+  } catch (err) {
+    const detail = err instanceof Error && err.message ? ` (${err.message})` : "";
+    throw new Error(
+      `Could not fetch from aoe4guides.com${detail} — the request may have been blocked by CORS or the network failed. Try pasting the build JSON directly instead.`,
+    );
+  }
+
+  if (!res.ok) {
+    if (res.status === 404) throw new Error("Build not found on aoe4guides.com.");
+    throw new Error(`aoe4guides.com returned an error (status ${res.status}).`);
+  }
+
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error("aoe4guides.com returned an invalid response.");
+  }
+
+  return parseAoe4GuidesPayload(data, id);
 };

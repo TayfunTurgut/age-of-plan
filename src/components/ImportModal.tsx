@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { saveBuildOrder } from "@/lib/storage";
+import { saveBuildOrder, StorageQuotaError } from "@/lib/storage";
 import {
   extractAoe4GuidesId,
   fetchAoe4GuidesBuild,
@@ -77,7 +77,17 @@ export const ImportModal = ({ open, onOpenChange, presetCivId }: Props) => {
     } else if (bo.civilization === "unknown") {
       toast.warning("Could not detect civilization. Please set it manually after import.");
     }
-    saveBuildOrder(bo);
+    try {
+      saveBuildOrder(bo);
+    } catch (err) {
+      if (err instanceof StorageQuotaError) {
+        setError(err.message);
+      } else {
+        setError("Could not save the imported build. See the console for details.");
+        console.error("[saveBuildOrder]", err);
+      }
+      return;
+    }
     toast.success("Build imported successfully");
     onOpenChange(false);
     navigate(`/build/${bo.id}/edit`);
@@ -119,18 +129,24 @@ export const ImportModal = ({ open, onOpenChange, presetCivId }: Props) => {
       rtsErr = err instanceof Error ? err : new Error(String(err));
     }
 
-    // Fall back to our own native export shape.
+    // Fall back to our own native export shape. Track its failure reason
+    // separately so the user sees *why* both attempts failed.
+    let nativeErr: string;
     try {
       const parsed = JSON.parse(text);
       if (looksLikeNativeExport(parsed)) {
         applyImport(reseedNative(parsed));
         return;
       }
-    } catch {
-      // Fall through to surface the original RTS_Overlay error.
+      nativeErr = "not a native Age of Plan export";
+    } catch (err) {
+      nativeErr = `invalid JSON — ${err instanceof Error ? err.message : "unknown error"}`;
     }
 
-    setError(rtsErr?.message ?? "Could not parse JSON.");
+    const rtsMsg = rtsErr?.message ?? "unknown error";
+    setError(
+      `Couldn't import this. As RTS_Overlay: ${rtsMsg}. As native export: ${nativeErr}.`,
+    );
   };
 
   const readFile = (file: File) => {
@@ -193,6 +209,9 @@ export const ImportModal = ({ open, onOpenChange, presetCivId }: Props) => {
 
           <TabsContent value="json" className="space-y-3">
             <div
+              role="button"
+              tabIndex={0}
+              aria-label="Upload JSON file — press Enter to browse, or drop a file here"
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragActive(true);
@@ -205,8 +224,14 @@ export const ImportModal = ({ open, onOpenChange, presetCivId }: Props) => {
                 if (file) readFile(file);
               }}
               onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
               className={cn(
-                "flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed p-4 text-sm text-muted-foreground transition-colors",
+                "focus-ring flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed p-4 text-sm text-muted-foreground transition-colors",
                 dragActive
                   ? "border-primary bg-primary/5 text-primary"
                   : "border-border hover:border-primary/60 hover:text-foreground",

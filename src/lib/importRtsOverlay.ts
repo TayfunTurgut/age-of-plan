@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { BuildOrder, BuildStep } from "@/types/buildOrder";
 import { parseTime } from "@/lib/time";
 import { computeVillagerCount } from "@/lib/buildOrder";
@@ -126,7 +127,7 @@ const mapNotes = (raw: unknown): { id: string; text: string }[] => {
     .map((text) => ({ id: crypto.randomUUID(), text }));
 };
 
-type RawResources = Partial<Record<string, number>>;
+type RawResources = Record<string, unknown>;
 
 const mapResources = (raw: RawResources | undefined) => {
   const r = raw ?? {};
@@ -144,19 +145,29 @@ const mapResources = (raw: RawResources | undefined) => {
   return resources;
 };
 
-type RawStep = {
-  age?: unknown;
-  villager_count?: unknown;
-  villagers?: unknown;
-  villagerCount?: unknown;
-  population_count?: unknown;
-  populationCount?: unknown;
-  resources?: RawResources;
-  time?: unknown;
-  time_seconds?: unknown;
-  timeSeconds?: unknown;
-  notes?: unknown;
-};
+/**
+ * Loose zod schemas. Like the aoe4guides importer we only guard the top-level
+ * shape; field-level parsing stays forgiving because RTS_Overlay exports in
+ * the wild mix string and numeric types, alias keys, and sometimes omit fields.
+ */
+const RawStepSchema = z
+  .object({
+    age: z.unknown(),
+    villager_count: z.unknown(),
+    villagers: z.unknown(),
+    villagerCount: z.unknown(),
+    population_count: z.unknown(),
+    populationCount: z.unknown(),
+    resources: z.record(z.string(), z.unknown()).optional(),
+    time: z.unknown(),
+    time_seconds: z.unknown(),
+    timeSeconds: z.unknown(),
+    notes: z.unknown(),
+  })
+  .partial()
+  .passthrough();
+
+type RawStep = z.infer<typeof RawStepSchema>;
 
 /** Step mapper shared by both importers. */
 export const mapStep = (raw: RawStep): BuildStep => {
@@ -198,33 +209,46 @@ export const mapStep = (raw: RawStep): BuildStep => {
   };
 };
 
-type RawRtsOverlay = {
-  name?: string;
-  title?: string;
-  civilization?: string;
-  civ?: string;
-  author?: string;
-  source?: string;
-  description?: string;
-  matchup?: string;
-  build_order?: RawStep[];
-};
+const RawRtsOverlaySchema = z
+  .object({
+    name: z.string().optional(),
+    title: z.string().optional(),
+    civilization: z.string().optional(),
+    civ: z.string().optional(),
+    author: z.string().optional(),
+    source: z.string().optional(),
+    description: z.string().optional(),
+    matchup: z.string().optional(),
+    build_order: z.array(RawStepSchema),
+  })
+  .passthrough();
+
+export type RawRtsOverlay = z.infer<typeof RawRtsOverlaySchema>;
 
 export const parseRtsOverlayJson = (json: string): BuildOrder => {
-  let parsed: RawRtsOverlay;
+  let data: unknown;
   try {
-    parsed = JSON.parse(json) as RawRtsOverlay;
+    data = JSON.parse(json);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "unknown error";
     throw new Error(`Invalid JSON: ${msg}`);
   }
 
-  if (!parsed || typeof parsed !== "object") {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
     throw new Error("Invalid JSON: expected an object at the top level.");
   }
-  if (!Array.isArray(parsed.build_order)) {
-    throw new Error("Missing build_order array.");
+
+  const result = RawRtsOverlaySchema.safeParse(data);
+  if (!result.success) {
+    const issue = result.error.issues[0];
+    // Surface the missing `build_order` case with its original wording so
+    // downstream error-handling (and its tests) can key on it.
+    if (issue && issue.path.join(".") === "build_order") {
+      throw new Error("Missing build_order array.");
+    }
+    throw new Error(`Invalid RTS_Overlay JSON: ${issue?.message ?? "unknown validation error"}`);
   }
+  const parsed = result.data;
 
   const now = Date.now();
   return {

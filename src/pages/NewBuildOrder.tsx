@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import { getCiv } from "@/data/civs";
 import { createEmptyBuildOrder } from "@/lib/buildOrder";
-import { saveBuildOrder } from "@/lib/storage";
+import { saveBuildOrder, StorageQuotaError } from "@/lib/storage";
 
 /**
  * Create-and-redirect: never a persistent page.
@@ -21,7 +22,18 @@ const NewBuildOrder = () => {
       return;
     }
     const bo = createEmptyBuildOrder(civ.id);
-    saveBuildOrder(bo);
+    try {
+      saveBuildOrder(bo);
+    } catch (err) {
+      if (err instanceof StorageQuotaError) {
+        toast.error(err.message);
+      } else {
+        toast.error("Could not create a new build. See the console for details.");
+        console.error("[createEmptyBuildOrder]", err);
+      }
+      navigate("/library", { replace: true });
+      return;
+    }
     navigate(`/build/${bo.id}/edit`, { replace: true });
   }, [params, navigate]);
 

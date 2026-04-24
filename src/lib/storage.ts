@@ -1,4 +1,5 @@
-import type { BuildOrder } from "@/types/buildOrder";
+import { z } from "zod";
+import type { BuildOrder, BuildStep, Resources } from "@/types/buildOrder";
 import { computeVillagerCount } from "@/lib/buildOrder";
 
 /**
@@ -15,58 +16,147 @@ const isBrowser = (): boolean => typeof window !== "undefined" && !!window.local
 
 const keyFor = (id: string): string => `${KEY_PREFIX}${id}`;
 
-const safeParse = (raw: string | null): BuildOrder | null => {
+const ResourcesSchema: z.ZodType<Resources> = z.object({
+  food: z.number(),
+  wood: z.number(),
+  gold: z.number(),
+  stone: z.number(),
+  builder: z.number(),
+  oliveOil: z.number().optional(),
+  silver: z.number().optional(),
+});
+
+const NoteSchema = z.object({ id: z.string(), text: z.string() });
+
+const TagSchema = z.object({
+  id: z.string(),
+  unit: z.string(),
+  location: z.string(),
+});
+
+const BuildStepSchema: z.ZodType<BuildStep> = z.object({
+  id: z.string(),
+  age: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  villagerCount: z.number(),
+  villagerCountManual: z.boolean().optional(),
+  populationCount: z.number().optional(),
+  resources: ResourcesSchema,
+  timeSeconds: z.number().optional(),
+  notes: z.array(NoteSchema),
+  tags: z.array(TagSchema).optional(),
+});
+
+const BuildOrderSchema: z.ZodType<BuildOrder> = z.object({
+  id: z.string(),
+  name: z.string(),
+  civilization: z.string(),
+  matchup: z.string().optional(),
+  author: z.string().optional(),
+  source: z.string().optional(),
+  description: z.string().optional(),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+  steps: z.array(BuildStepSchema),
+});
+
+type LegacyNote = string | { id?: string; text?: string };
+type LegacyStep = {
+  notes?: LegacyNote[];
+  villagerCountManual?: unknown;
+  villagerCount?: number;
+  resources?: Resources;
+  [key: string]: unknown;
+};
+
+/**
+ * Migrate a parsed build order into the current schema shape, without
+ * mutating the input. Returns the migrated object and a flag indicating
+ * whether anything actually changed (so callers can decide whether to
+ * persist the new shape).
+ */
+const migrate = (input: unknown): { value: unknown; mutated: boolean } => {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return { value: input, mutated: false };
+  }
+  const bo = input as { steps?: unknown; [key: string]: unknown };
+  if (!Array.isArray(bo.steps)) return { value: input, mutated: false };
+
+  let mutated = false;
+  const nextSteps = bo.steps.map((stepRaw: unknown) => {
+    if (!stepRaw || typeof stepRaw !== "object") return stepRaw;
+    const step = stepRaw as LegacyStep;
+    let nextStep: LegacyStep = step;
+
+    // Migrate legacy notes (string[]) → { id, text }[].
+    if (Array.isArray(step.notes) && step.notes.some((n) => typeof n === "string")) {
+      mutated = true;
+      nextStep = {
+        ...nextStep,
+        notes: step.notes.map((n) =>
+          typeof n === "string" ? { id: crypto.randomUUID(), text: n } : n,
+        ) as { id: string; text: string }[],
+      };
+    }
+
+    // Default villagerCountManual to false when missing.
+    if (typeof nextStep.villagerCountManual !== "boolean") {
+      mutated = true;
+      nextStep = { ...nextStep, villagerCountManual: false };
+    }
+
+    // When in auto mode, recompute villagerCount to match resource breakdown.
+    if (nextStep.villagerCountManual === false && nextStep.resources) {
+      const sum = computeVillagerCount(nextStep.resources);
+      if (nextStep.villagerCount !== sum) {
+        mutated = true;
+        nextStep = { ...nextStep, villagerCount: sum };
+      }
+    }
+
+    return nextStep;
+  });
+
+  if (!mutated) return { value: input, mutated: false };
+  return { value: { ...bo, steps: nextSteps }, mutated: true };
+};
+
+const readFromStorage = (
+  raw: string | null,
+  sourceKey: string,
+): BuildOrder | null => {
   if (!raw) return null;
+
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(raw) as BuildOrder;
-    if (!parsed || typeof parsed !== "object" || typeof parsed.id !== "string") return null;
-    let mutated = false;
-    if (Array.isArray(parsed.steps)) {
-      for (const step of parsed.steps) {
-        if (!step) continue;
-        // Migrate legacy notes (string[]) → { id, text }[].
-        if (Array.isArray(step.notes)) {
-          for (const n of step.notes) {
-            if (typeof n === "string") {
-              mutated = true;
-              break;
-            }
-          }
-          if (mutated) {
-            step.notes = step.notes.map((n: unknown) =>
-              typeof n === "string"
-                ? { id: crypto.randomUUID(), text: n }
-                : (n as { id: string; text: string }),
-            );
-          }
-        }
-        // Migrate villagerCountManual: default to false, recompute when in auto mode.
-        if (typeof step.villagerCountManual !== "boolean") {
-          step.villagerCountManual = false;
-          mutated = true;
-        }
-        if (step.villagerCountManual === false && step.resources) {
-          const sum = computeVillagerCount(step.resources);
-          if (step.villagerCount !== sum) {
-            step.villagerCount = sum;
-            mutated = true;
-          }
-        }
-      }
-    }
-    // Persist migrated shape once so subsequent reads skip the work.
-    // Silent migration — do not bump updatedAt.
-    if (mutated && isBrowser()) {
-      try {
-        window.localStorage.setItem(keyFor(parsed.id), JSON.stringify(parsed));
-      } catch {
-        // ignore quota/storage errors — in-memory result is still valid.
-      }
-    }
-    return parsed;
-  } catch {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    console.warn(
+      `[storage] Could not parse build order at "${sourceKey}":`,
+      err instanceof Error ? err.message : err,
+    );
     return null;
   }
+
+  const { value: migrated, mutated } = migrate(parsed);
+
+  const result = BuildOrderSchema.safeParse(migrated);
+  if (!result.success) {
+    console.warn(
+      `[storage] Build order at "${sourceKey}" failed schema validation:`,
+      result.error.issues.slice(0, 3),
+    );
+    return null;
+  }
+
+  if (mutated && isBrowser()) {
+    try {
+      window.localStorage.setItem(sourceKey, JSON.stringify(result.data));
+    } catch {
+      // ignore quota/storage errors — in-memory result is still valid.
+    }
+  }
+
+  return result.data;
 };
 
 export const getAllBuildOrders = (): BuildOrder[] => {
@@ -75,7 +165,7 @@ export const getAllBuildOrders = (): BuildOrder[] => {
   for (let i = 0; i < window.localStorage.length; i++) {
     const key = window.localStorage.key(i);
     if (!key || !key.startsWith(KEY_PREFIX)) continue;
-    const bo = safeParse(window.localStorage.getItem(key));
+    const bo = readFromStorage(window.localStorage.getItem(key), key);
     if (bo) out.push(bo);
   }
   return out.sort((a, b) => b.updatedAt - a.updatedAt);
@@ -86,16 +176,37 @@ export const getBuildOrdersByCiv = (civId: string): BuildOrder[] =>
 
 export const getBuildOrder = (id: string): BuildOrder | null => {
   if (!isBrowser()) return null;
-  return safeParse(window.localStorage.getItem(keyFor(id)));
+  const key = keyFor(id);
+  return readFromStorage(window.localStorage.getItem(key), key);
+};
+
+export class StorageQuotaError extends Error {
+  constructor(message = "Could not save build — browser storage is full.") {
+    super(message);
+    this.name = "StorageQuotaError";
+  }
+}
+
+const isQuotaError = (err: unknown): boolean => {
+  if (!(err instanceof Error)) return false;
+  // Chromium: "QuotaExceededError"; Safari: "QuotaExceededError" code 22;
+  // Firefox: "NS_ERROR_DOM_QUOTA_REACHED".
+  return (
+    err.name === "QuotaExceededError" ||
+    err.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+    /quota/i.test(err.message)
+  );
 };
 
 export const saveBuildOrder = (bo: BuildOrder): void => {
   if (!isBrowser()) return;
   const next: BuildOrder = { ...bo, updatedAt: Date.now() };
+  const serialized = JSON.stringify(next);
   try {
-    window.localStorage.setItem(keyFor(next.id), JSON.stringify(next));
-  } catch {
-    // Quota exceeded or storage unavailable — silently ignore for now.
+    window.localStorage.setItem(keyFor(next.id), serialized);
+  } catch (err) {
+    if (isQuotaError(err)) throw new StorageQuotaError();
+    throw err;
   }
 };
 

@@ -1,57 +1,70 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { getAssetUrl } from "@/lib/assets";
 
 /**
  * Parses tokens like `@category/file.png@` (or `.webp`) inside note text and
  * returns a ReactNode array with inline icons interleaved with plain text.
  *
- * Non-matching segments are wrapped in `<span>` to preserve whitespace.
- * Broken images hide themselves via the `onError` handler.
- *
- * Results are memoized in a bounded LRU-ish Map keyed by the raw text. The
- * note renderer is called on every render of the runner / preview, so this
- * cache avoids re-parsing identical strings on each tick.
+ * Parsing and rendering are split:
+ *   - `parseNoteTokens(text)` is pure and cached. The cache holds cheap
+ *     token arrays (strings + discriminants), not ReactNodes, so it doesn't
+ *     pin React internals or hold onto DOM refs.
+ *   - The icon `<NoteIcon>` component manages its own failed-image state via
+ *     `useState` rather than mutating `style.display` in an `onError` handler.
  */
+
+export type NoteToken =
+  | { kind: "text"; value: string }
+  | { kind: "image"; path: string };
+
 const TOKEN_RE = /@([^@\s]+\.(?:png|webp))@/g;
 const MAX_CACHE = 200;
-const cache = new Map<string, ReactNode[]>();
+const tokenCache = new Map<string, NoteToken[]>();
 
-export const renderNote = (text: string): ReactNode[] => {
+export const parseNoteTokens = (text: string): NoteToken[] => {
   if (!text) return [];
-  const cached = cache.get(text);
+  const cached = tokenCache.get(text);
   if (cached) return cached;
 
-  const out: ReactNode[] = [];
+  const tokens: NoteToken[] = [];
   let last = 0;
-  let i = 0;
   for (const m of text.matchAll(TOKEN_RE)) {
     const start = m.index ?? 0;
-    if (start > last) {
-      out.push(<span key={`t-${i++}`}>{text.slice(last, start)}</span>);
-    }
-    const path = m[1];
-    out.push(
-      <img
-        key={`i-${i++}`}
-        src={getAssetUrl(path)}
-        alt=""
-        loading="lazy"
-        onError={(e) => {
-          (e.currentTarget as HTMLImageElement).style.display = "none";
-        }}
-        className="mx-0.5 inline h-4 w-4 align-text-bottom"
-      />,
-    );
+    if (start > last) tokens.push({ kind: "text", value: text.slice(last, start) });
+    tokens.push({ kind: "image", path: m[1] });
     last = start + m[0].length;
   }
-  if (last < text.length) {
-    out.push(<span key={`t-${i++}`}>{text.slice(last)}</span>);
-  }
+  if (last < text.length) tokens.push({ kind: "text", value: text.slice(last) });
 
-  if (cache.size >= MAX_CACHE) {
-    const firstKey = cache.keys().next().value;
-    if (firstKey !== undefined) cache.delete(firstKey);
+  if (tokenCache.size >= MAX_CACHE) {
+    const firstKey = tokenCache.keys().next().value;
+    if (firstKey !== undefined) tokenCache.delete(firstKey);
   }
-  cache.set(text, out);
-  return out;
+  tokenCache.set(text, tokens);
+  return tokens;
+};
+
+const NoteIcon = ({ path }: { path: string }) => {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <img
+      src={getAssetUrl(path)}
+      alt=""
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="mx-0.5 inline h-4 w-4 align-text-bottom"
+    />
+  );
+};
+
+export const renderNote = (text: string): ReactNode[] => {
+  const tokens = parseNoteTokens(text);
+  return tokens.map((tok, i) =>
+    tok.kind === "text" ? (
+      <span key={`t-${i}`}>{tok.value}</span>
+    ) : (
+      <NoteIcon key={`i-${i}`} path={tok.path} />
+    ),
+  );
 };
