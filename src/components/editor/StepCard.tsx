@@ -155,7 +155,8 @@ export const StepCard = ({
       ref={overlay ? undefined : setNodeRef}
       style={overlay ? undefined : style}
       className={cn(
-        "relative flex gap-3 border-border bg-card p-3 sm:p-4",
+        "relative flex gap-3 border-border bg-card p-3 sm:p-4 border-l-4",
+        AGE_BORDER[step.age],
         isDragging && !overlay && "opacity-40",
         overlay && "shadow-2xl ring-1 ring-primary/40",
       )}
@@ -186,12 +187,19 @@ export const StepCard = ({
                   onValueChange={(v) => update({ age: Number(v) as 1 | 2 | 3 | 4 })}
                 >
                   <SelectTrigger className="h-8">
-                    <SelectValue />
+                    <SelectValue asChild>
+                      <span className="flex items-center justify-center">
+                        <AgeIcon age={step.age} className="h-5 w-5" />
+                      </span>
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {[1, 2, 3, 4].map((a) => (
                       <SelectItem key={a} value={String(a)}>
-                        {AGE_LABELS[a as 1 | 2 | 3 | 4].roman}
+                        <span className="flex items-center gap-2">
+                          <AgeIcon age={a as 1 | 2 | 3 | 4} className="h-4 w-4" />
+                          <span>{AGE_LABELS[a as 1 | 2 | 3 | 4].roman}</span>
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
