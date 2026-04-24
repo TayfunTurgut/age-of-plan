@@ -25,7 +25,7 @@ const NewBuildOrder = () => {
     navigate(`/build/${bo.id}/edit`, { replace: true });
   }, [params, navigate]);
 
-  return <main className="min-h-screen bg-background" />;
+  return <main className="page-enter min-h-screen bg-background" />;
 };
 
 export default NewBuildOrder;
