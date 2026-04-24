@@ -8,10 +8,15 @@ const emptyResources = (): Resources => ({
   builder: 0,
 });
 
+/** Sum of all resource assignments — the source of truth for villager counts. */
+export const computeVillagerCount = (r: Resources): number =>
+  r.food + r.wood + r.gold + r.stone + r.builder + (r.oliveOil ?? 0) + (r.silver ?? 0);
+
 export const createEmptyStep = (previousStep?: BuildStep): BuildStep => ({
   id: crypto.randomUUID(),
   age: previousStep?.age ?? 1,
   villagerCount: previousStep?.villagerCount ?? 0,
+  villagerCountManual: false,
   populationCount: undefined,
   resources: emptyResources(),
   timeSeconds: undefined,
