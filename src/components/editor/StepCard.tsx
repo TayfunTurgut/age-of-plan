@@ -451,3 +451,82 @@ const NoteRow = ({ note, stepId, index, onCommit, onDelete }: NoteRowProps) => {
     </div>
   );
 };
+
+type VillagerBadgeProps = {
+  step: BuildStep;
+  previousVillagerCount?: number;
+  onUpdate: (patch: Partial<BuildStep>) => void;
+};
+
+const VillagerBadge = ({ step, previousVillagerCount, onUpdate }: VillagerBadgeProps) => {
+  const isManual = step.villagerCountManual === true;
+  const delta =
+    previousVillagerCount === undefined ? 0 : step.villagerCount - previousVillagerCount;
+  const showDelta = previousVillagerCount !== undefined && delta !== 0;
+
+  const toggleLock = () => onUpdate({ villagerCountManual: !isManual });
+
+  const tooltip = isManual
+    ? "Manual override. Click to recompute from resources."
+    : "Auto-calculated from resources. Click to override.";
+
+  return (
+    <div className="flex flex-col items-start gap-0.5">
+      <div className="flex items-center gap-1">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-1",
+            isManual && "border-primary/50 bg-primary/10",
+          )}
+        >
+          <Users className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+          {isManual ? (
+            <InlineText
+              value={String(step.villagerCount)}
+              inputType="number"
+              ariaLabel="Villager count (manual)"
+              className="w-10"
+              validate={(raw) => /^\d+$/.test(raw.trim())}
+              onCommit={(raw) => onUpdate({ villagerCount: parseInt(raw, 10) || 0 })}
+            />
+          ) : (
+            <span
+              className="min-w-[1.5rem] text-center text-sm font-medium tabular-nums text-foreground"
+              aria-label="Villager count (auto)"
+            >
+              {step.villagerCount}
+            </span>
+          )}
+        </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={toggleLock}
+              aria-label={isManual ? "Unlock to auto-calculate villagers" : "Lock villager count"}
+              aria-pressed={isManual}
+              className={cn(
+                "rounded-md p-1 transition-colors hover:bg-muted/50",
+                isManual ? "text-primary" : "text-muted-foreground/70 hover:text-foreground",
+              )}
+            >
+              {isManual ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>{tooltip}</TooltipContent>
+        </Tooltip>
+      </div>
+      {showDelta && (
+        <span
+          className={cn(
+            "pl-2 text-[10px] font-medium tabular-nums leading-none",
+            delta > 0 ? "text-green-600 dark:text-green-500" : "text-destructive",
+          )}
+          aria-label={`Change from previous step: ${delta > 0 ? "+" : ""}${delta}`}
+        >
+          {delta > 0 ? `+${delta}` : delta}
+        </span>
+      )}
+    </div>
+  );
+};
