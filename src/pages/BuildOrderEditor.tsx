@@ -427,8 +427,8 @@ const BuildOrderEditor = () => {
                           civ={civ}
                           previousVillagerCount={i > 0 ? bo.steps[i - 1].villagerCount : undefined}
                           onChange={setStep}
-                          onDuplicate={() => duplicateStep(i)}
-                          onDelete={() => deleteStep(i)}
+                          onDuplicate={() => duplicateStep(step.id)}
+                          onDelete={() => deleteStep(step.id)}
                           isOverForeignNote={isOverForeignNote}
                         />
                       </div>
