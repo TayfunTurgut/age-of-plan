@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Upload } from "lucide-react";
 import { CIVS, getCiv } from "@/data/civs";
 import { CivFlag } from "@/components/CivFlag";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ImportModal } from "@/components/ImportModal";
 
@@ -19,21 +17,28 @@ const Index = () => {
           "repeating-linear-gradient(135deg, hsl(var(--foreground) / 0.02) 0 1px, transparent 1px 8px)",
       }}
     >
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setImportOpen(true)}
-        className="absolute right-6 top-6"
-      >
-        <Upload className="h-4 w-4" /> Import
-      </Button>
-
       <div className="mx-auto max-w-7xl">
         <header className="mb-10 text-center md:mb-14">
           <h1 className="font-display text-4xl font-bold tracking-wide text-primary sm:text-5xl md:text-6xl">
             AoE4 Build Order Planner
           </h1>
           <p className="mt-3 text-lg text-muted-foreground">Choose a civilization</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            <Link
+              to="/library"
+              className="underline-offset-2 hover:text-primary hover:underline"
+            >
+              Browse Library
+            </Link>
+            <span className="mx-2 opacity-60">·</span>
+            <button
+              type="button"
+              onClick={() => setImportOpen(true)}
+              className="underline-offset-2 hover:text-primary hover:underline"
+            >
+              or import a build
+            </button>
+          </p>
         </header>
 
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

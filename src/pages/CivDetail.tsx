@@ -1,23 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Trash2, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import { getCiv } from "@/data/civs";
 import { CivFlag } from "@/components/CivFlag";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ImportModal } from "@/components/ImportModal";
+import { BuildCard } from "@/components/library/BuildCard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { deleteBuildOrder, getBuildOrdersByCiv } from "@/lib/storage";
 import type { BuildOrder } from "@/types/buildOrder";
 
-const formatDate = (ts: number): string =>
-  new Date(ts).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+type SortKey = "updated" | "name-asc" | "name-desc" | "created-desc" | "created-asc";
 
 const CivDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,11 +26,29 @@ const CivDetail = () => {
   const parent = getCiv(civ?.variantOf);
   const [builds, setBuilds] = useState<BuildOrder[]>([]);
   const [importOpen, setImportOpen] = useState(false);
+  const [sort, setSort] = useState<SortKey>("updated");
 
   useEffect(() => {
     if (!id) return;
     setBuilds(getBuildOrdersByCiv(id));
   }, [id]);
+
+  const sorted = useMemo(() => {
+    const copy = builds.slice();
+    switch (sort) {
+      case "name-asc":
+        return copy.sort((a, b) => a.name.localeCompare(b.name));
+      case "name-desc":
+        return copy.sort((a, b) => b.name.localeCompare(a.name));
+      case "created-desc":
+        return copy.sort((a, b) => b.createdAt - a.createdAt);
+      case "created-asc":
+        return copy.sort((a, b) => a.createdAt - b.createdAt);
+      case "updated":
+      default:
+        return copy.sort((a, b) => b.updatedAt - a.updatedAt);
+    }
+  }, [builds, sort]);
 
   if (!civ) {
     return (
@@ -85,7 +104,23 @@ const CivDetail = () => {
         </header>
 
         <section className="mt-10">
-          <h2 className="font-display text-2xl font-bold text-foreground">Saved build orders</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-2xl font-bold text-foreground">Saved build orders</h2>
+            {builds.length > 0 && (
+              <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+                <SelectTrigger className="h-9 w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="updated">Last edited</SelectItem>
+                  <SelectItem value="name-asc">Name A–Z</SelectItem>
+                  <SelectItem value="name-desc">Name Z–A</SelectItem>
+                  <SelectItem value="created-desc">Newest</SelectItem>
+                  <SelectItem value="created-asc">Oldest</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
 
           {builds.length === 0 ? (
             <Card className="mt-4 border-dashed bg-muted/30 p-8 text-center">
@@ -94,32 +129,10 @@ const CivDetail = () => {
               </p>
             </Card>
           ) : (
-            <ul className="mt-4 space-y-3">
-              {builds.map((bo) => (
+            <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {sorted.map((bo) => (
                 <li key={bo.id}>
-                  <Card className="flex items-center justify-between gap-4 p-4 transition-colors hover:border-primary/60">
-                    <Link to={`/build/${bo.id}`} className="min-w-0 flex-1">
-                      <h3 className="truncate font-display text-lg font-bold text-foreground">
-                        {bo.name || "Untitled build"}
-                      </h3>
-                      <p className="truncate text-sm text-muted-foreground">
-                        {bo.matchup ? `${bo.matchup} • ` : ""}Updated {formatDate(bo.updatedAt)}
-                      </p>
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Delete ${bo.name || "build order"}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleDelete(bo.id);
-                      }}
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 />
-                    </Button>
-                  </Card>
+                  <BuildCard bo={bo} onDelete={handleDelete} hideCiv />
                 </li>
               ))}
             </ul>
