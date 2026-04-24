@@ -14,7 +14,10 @@ export const NavBar = () => {
       <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-4">
         <Link
           to="/"
-          className="truncate font-display text-sm font-bold text-primary transition-colors hover:opacity-80"
+          className={cn(
+            "truncate rounded-sm font-display text-sm font-bold text-primary transition-colors hover:opacity-80",
+            "focus-ring",
+          )}
         >
           AoE4 Build Order Planner
         </Link>
@@ -24,6 +27,7 @@ export const NavBar = () => {
             className={cn(
               "rounded-md px-2 py-1 text-sm transition-colors",
               "text-muted-foreground hover:text-foreground",
+              "focus-ring",
             )}
             activeClassName="text-primary"
           >
@@ -35,8 +39,16 @@ export const NavBar = () => {
             size="icon"
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             onClick={toggleTheme}
+            className="focus-ring"
           >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            <span
+              className={cn(
+                "inline-flex transition-transform duration-300 ease-out",
+                isDark ? "rotate-0" : "rotate-180",
+              )}
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </span>
           </Button>
         </div>
       </div>

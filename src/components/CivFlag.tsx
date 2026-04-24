@@ -27,6 +27,7 @@ interface CivFlagProps extends React.HTMLAttributes<HTMLDivElement> {
 export const CivFlag = React.forwardRef<HTMLDivElement, CivFlagProps>(
   ({ civ, size = "md", className, style, ...props }, ref) => {
     const [failed, setFailed] = React.useState(false);
+    const [loaded, setLoaded] = React.useState(false);
     const showImage = !failed && Boolean(civ.flagIcon);
 
     return (
@@ -40,7 +41,10 @@ export const CivFlag = React.forwardRef<HTMLDivElement, CivFlagProps>(
         )}
         style={
           showImage
-            ? { backgroundColor: "hsl(var(--secondary))", ...style }
+            ? {
+                backgroundImage: `linear-gradient(135deg, ${civ.flagColor.from}, ${civ.flagColor.to})`,
+                ...style,
+              }
             : {
                 backgroundImage: `linear-gradient(135deg, ${civ.flagColor.from}, ${civ.flagColor.to})`,
                 ...style,
@@ -53,8 +57,12 @@ export const CivFlag = React.forwardRef<HTMLDivElement, CivFlagProps>(
             src={getAssetUrl(civ.flagIcon)}
             alt={civ.name}
             loading="lazy"
+            onLoad={() => setLoaded(true)}
             onError={() => setFailed(true)}
-            className="h-full w-full object-contain p-1"
+            className={cn(
+              "h-full w-full object-contain p-1 transition-opacity duration-300",
+              loaded ? "opacity-100" : "opacity-0",
+            )}
           />
         ) : (
           <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">{initialsFor(civ.name)}</span>
