@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { getAssetUrl } from "@/lib/assets";
 
@@ -20,7 +20,7 @@ type Props = {
   onChange: (next: number) => void;
 };
 
-export const ResourcePill = ({ resource, value, onChange }: Props) => {
+const ResourcePillImpl = ({ resource, value, onChange }: Props) => {
   const meta = META[resource];
   const [iconFailed, setIconFailed] = useState(false);
   const showIcon = Boolean(meta.icon) && !iconFailed;
@@ -48,6 +48,8 @@ export const ResourcePill = ({ resource, value, onChange }: Props) => {
       <span className="text-xs font-medium text-muted-foreground">{meta.label}</span>
       <input
         type="number"
+        inputMode="numeric"
+        pattern="[0-9]*"
         min={0}
         value={value}
         onChange={(e) => {
@@ -60,3 +62,5 @@ export const ResourcePill = ({ resource, value, onChange }: Props) => {
     </label>
   );
 };
+
+export const ResourcePill = memo(ResourcePillImpl);
