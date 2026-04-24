@@ -104,6 +104,7 @@ export const StepCard = ({
   onDelete,
   overlay = false,
   isOverForeignNote = false,
+  previousVillagerCount,
 }: Props) => {
   const sortable = useSortable({
     id: step.id,
