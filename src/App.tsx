@@ -7,6 +7,7 @@ import Index from "./pages/Index.tsx";
 import CivDetail from "./pages/CivDetail.tsx";
 import NewBuildOrder from "./pages/NewBuildOrder.tsx";
 import BuildOrderPlaceholder from "./pages/BuildOrderPlaceholder.tsx";
+import BuildOrderEditor from "./pages/BuildOrderEditor.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/civ/:id" element={<CivDetail />} />
           <Route path="/build/new" element={<NewBuildOrder />} />
           <Route path="/build/:id" element={<BuildOrderPlaceholder />} />
+          <Route path="/build/:id/edit" element={<BuildOrderEditor />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
