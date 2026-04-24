@@ -1,55 +1,81 @@
 
-## Iteration 4 — Drag-and-drop notes (within and between steps)
+## Iteration 5 — Real AoE4 Game Icons + Visual Polish (final)
 
-### 1. Notes data model — `src/types/buildOrder.ts`
-Change `BuildStep.notes` from `string[]` to:
+### 1. New asset helper — `src/lib/assets.ts`
 ```ts
-notes: { id: string; text: string }[];
+export const ASSET_BASE_URL = "https://rts-overlay.github.io/assets/aoe4/";
+export const getAssetUrl = (path: string): string => `${ASSET_BASE_URL}${path}`;
 ```
+Single switch-point so we can later swap to self-hosted assets.
 
-### 2. Factory — `src/lib/buildOrder.ts`
-`createEmptyStep` already returns `notes: []`; just confirm the type matches the new shape. No logic change.
+### 2. `src/data/civs.ts` — add `flagIcon`
+- Extend `Civ` type with `flagIcon: string` (path relative to `ASSET_BASE_URL`).
+- Map all 22 civs to `civilization_flag/CivIcon-<Name>AoE4_spacing.png`:
+  - english, french, hre (HRE), mongols, rus, chinese, delhi, abbasid, ottomans, malians, byzantines, japanese
+  - ayyubids, zhu-xi (ZhuXiLegacy), jeanne-darc (JeanneDArc), order-of-the-dragon (OrderOfTheDragon), knights-templar (KnightsTemplar), house-of-lancaster (HouseOfLancaster), golden-horde (GoldenHorde)
+- **Mark uncertain filenames with explicit TODO comments** so we don't lose track:
+  - `macedonian` → `CivIcon-MacedoniansAoE4_spacing.png` // TODO: verify — may be MacedonianDynastyAoE4
+  - `sengoku-daimyo` → `CivIcon-JapaneseAoE4_spacing.png` // TODO: placeholder, verify actual filename when available
+  - `tughluqid` → `CivIcon-DelhiAoE4_spacing.png` // TODO: placeholder, verify actual filename when available
+- All three fall back gracefully via `onError`. Existing `flagColor` retained for the gradient fallback.
 
-### 3. Storage migration — `src/lib/storage.ts`
-In `safeParse` (the single read path used by both `getBuildOrder` and `getAllBuildOrders`), after the basic shape check, walk `parsed.steps` and for each step:
-- If `step.notes` contains any plain strings, map each entry to `{ id: crypto.randomUUID(), text: s }`; leave already-shaped entries alone.
+### 3. `src/components/CivFlag.tsx` — real flag + prop-driven sizes
+- **Add all three sizes in the same `SIZE_CLASSES` map** (prop-driven, not per-page overrides):
+  ```ts
+  const SIZE_CLASSES: Record<Size, string> = {
+    sm: "h-10 w-10 text-sm",
+    md: "h-16 w-16 text-lg",
+    lg: "h-24 w-24 text-2xl",
+  };
+  ```
+  And widen `Size = "sm" | "md" | "lg"`.
+- Local `useState` `failed` flag. While `!failed && civ.flagIcon`, render `<img src={getAssetUrl(civ.flagIcon)} loading="lazy" alt={civ.name} className="h-full w-full object-contain p-1">` inside the existing brass-bordered container.
+- `onError` → `setFailed(true)` → fall back to current gradient + initials block.
+- Brass border + rounded square wrapper unchanged so layout stays identical.
 
-Returned object is migrated in memory only — never written back. Next user edit triggers natural autosave.
+### 4. `src/components/editor/ResourcePill.tsx` — real resource icons
+- Per-resource icon path map: food/wood/gold/stone via `resource/resource_<name>.png`, oliveOil via `resource/olive_oil.png`.
+- Replace the `<span>` colored dot with `<img className="h-4 w-4" loading="lazy">` for resources that have a path.
+- Per-pill `failed` state; `onError` swaps back to existing colored dot. `builder` and `silver` keep colored dots (no map entry).
 
-### 4. `StepCard.tsx` — note SortableContext + grip handles
-- Wrap the notes list in a `SortableContext` keyed by `note.id` (vertical strategy). The container `div` gets a `useDroppable` with id `notes:<step.id>` so empty steps are still valid drop targets.
-- Extract a `NoteRow` subcomponent that calls `useSortable({ id: note.id, data: { type: "note", noteId: note.id, sourceStepId: step.id } })`. Layout:
-  - Mini `GripVertical` handle (`h-6 w-4 text-muted-foreground/50`) — only this binds drag listeners.
-  - Existing inline text input (unchanged behaviour).
-  - Existing X delete button (unchanged).
-  - When `isDragging`, render a `border-dashed border-primary/40` placeholder in place.
-- The step's own `useSortable` call gains `data: { type: "step", stepId: step.id }`.
-- Note handlers (`setNote`, `deleteNote`, `addNote`) updated for the new object shape; `addNote` creates `{ id: crypto.randomUUID(), text: "" }` and auto-focuses on empty text.
-- `stepHasContent` updated to read `n.text.trim()`.
-- Empty-notes drop zone: when `step.notes.length === 0`, render a min-height dashed-border block reading "Drop notes here" (muted). Container gets a faint brass border (`ring-1 ring-primary/30`) when a foreign note is hovering — driven by an `isOverForeignNote` prop passed from the editor.
+### 5. `src/components/editor/StepCard.tsx` — age icons + age-colored border
+- `AGE_ICON: Record<1|2|3|4, string>` → `age/age_1.png` … `age/age_4.png`.
+- Replace `SelectValue` text with a small wrapper rendering `<img src={getAssetUrl(AGE_ICON[step.age])} alt={AGE_LABELS[step.age].roman} className="h-5 w-5">` with onError fallback to roman numeral text.
+- `SelectItem` rows render icon + roman numeral side by side (same fallback wrapper).
+- **Age-colored left border**: `AGE_BORDER: Record<1|2|3|4, string>` (1 gray, 2 green, 3 blue, 4 brass/red); apply `border-l-4 border-l-<color>` to the root `Card` className alongside existing classes.
 
-### 5. `BuildOrderEditor.tsx` — dual-type DndContext
-- Single `DndContext` keeps step-level `SortableContext` as today.
-- Track `activeType: "step" | "note" | null` and `overContainerId: string | null` in `useState`; `activeContainerRef = useRef<string | null>(null)` to dedupe `onDragOver` updates.
-- `onDragStart`: read `active.data.current.type`, set `activeType` and (for notes) `activeContainerRef.current = "notes:" + sourceStepId`.
-- `onDragOver`: if `activeType === "note"`, resolve the over container from `over.data.current` (note → its `sourceStepId`) or `over.id` (droppable container id `notes:<stepId>`). If it differs from `activeContainerRef.current`, optimistically move the dragged note out of the source step's `notes` and append to the target step's `notes`, then update the ref + `overContainerId` state (used to drive the brass border on the hovered step).
-- `onDragEnd`:
-  - `type === "step"`: existing `arrayMove` logic on `bo.steps`.
-  - `type === "note"`: locate the note's current step (post-`onDragOver`) and reorder within that step's `notes` array using `arrayMove` based on `over.id`. Clear `activeType`, `overContainerId`, ref.
-- `onDragCancel`: reset all drag state. Note: because `onDragOver` mutates state optimistically, cancel should restore from a snapshot taken in `onDragStart` (`startSnapshotRef = useRef<BuildStep[] | null>(null)`).
-- `DragOverlay`:
-  - `step` → existing semi-transparent `StepCard` clone.
-  - `note` → compact pill: muted background, single-line truncated text, mini grip icon. Smaller than a step card.
-- Pass `overContainerId` down to each `StepCard` so it can highlight when a foreign note is hovering.
+### 6. `src/pages/Index.tsx` — picker polish
+- Subtle CSS-only diagonal texture on `<main>` via inline style:
+  `backgroundImage: "repeating-linear-gradient(135deg, hsl(var(--foreground)/0.02) 0 1px, transparent 1px 8px)"`.
+- Card hover gains brass glow: `hover:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.4)]`.
+- Append shared `<SiteFooter />`.
 
-### 6. Visual polish
-- Dragging note source: dashed brass placeholder (`border border-dashed border-primary/40 bg-transparent`).
-- Foreign-note hover on step: notes container gets `ring-1 ring-primary/40` transition.
-- Empty notes drop zone: `min-h-12 rounded-md border border-dashed border-border text-xs text-muted-foreground/70` centered text.
+### 7. `src/pages/CivDetail.tsx` — polish
+- Use `<CivFlag civ={civ} size="lg" />` in the header (relies on the prop-driven `lg` from §3 — no per-page override).
+- Append shared `<SiteFooter />`.
+
+### 8. New shared component — `src/components/SiteFooter.tsx`
+Centered muted small-text block:
+> "Age of Empires IV © Microsoft Corporation. Created under Microsoft's 'Game Content Usage Rules' using assets from Age of Empires IV. Not endorsed by or affiliated with Microsoft."
+
+with link to `https://www.xbox.com/en-us/developers/rules`. Used by Index + CivDetail.
+
+### 9. Global page transition — `src/index.css`
+Add inside a `@media (prefers-reduced-motion: no-preference)` block:
+```css
+@keyframes page-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+.page-enter { animation: page-fade 220ms ease-out; }
+```
+Apply `.page-enter` to the root `<main>` of Index, CivDetail, BuildOrderEditor, NewBuildOrder, BuildOrderPlaceholder.
 
 ### Out of scope
-- Runner/timer, import/export, icon-token rendering, `civs.ts`, civ picker, civ detail. Step drag UX unchanged — only handler internals gain type discrimination. No Supabase/server.
+- DnD logic, `storage.ts`, `buildOrder.ts`, note handling — untouched.
+- No image bundling/downloading; all assets hotlinked from `rts-overlay.github.io`.
+- No Supabase/server.
 
 ### File summary
-- **Edited**: `src/types/buildOrder.ts`, `src/lib/buildOrder.ts`, `src/lib/storage.ts`, `src/pages/BuildOrderEditor.tsx`, `src/components/editor/StepCard.tsx`.
-- **No new files.**
+- **New**: `src/lib/assets.ts`, `src/components/SiteFooter.tsx`.
+- **Edited**: `src/data/civs.ts`, `src/components/CivFlag.tsx`, `src/components/editor/ResourcePill.tsx`, `src/components/editor/StepCard.tsx`, `src/pages/Index.tsx`, `src/pages/CivDetail.tsx`, `src/index.css`, plus `.page-enter` added to the `<main>` of `BuildOrderEditor`, `NewBuildOrder`, `BuildOrderPlaceholder`.
