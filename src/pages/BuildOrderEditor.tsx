@@ -21,7 +21,7 @@ import { Download, GripVertical } from "lucide-react";
 import type { BuildOrder, BuildStep } from "@/types/buildOrder";
 import { getBuildOrder, saveBuildOrder } from "@/lib/storage";
 import { getCiv } from "@/data/civs";
-import { createEmptyStep } from "@/lib/buildOrder";
+import { computeVillagerCount, createEmptyStep } from "@/lib/buildOrder";
 import { exportAsJson, exportAsRtsOverlay } from "@/lib/exportBuildOrder";
 import { InlineText } from "@/components/editor/InlineText";
 import { StepCard } from "@/components/editor/StepCard";
