@@ -33,7 +33,7 @@ export type BuildStep = {
   resources: Resources;
   /** Canonical seconds from the start of the game. */
   timeSeconds?: number;
-  notes: string[];
+  notes: { id: string; text: string }[];
 };
 
 export type BuildOrder = {

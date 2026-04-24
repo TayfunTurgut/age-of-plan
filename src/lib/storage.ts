@@ -19,6 +19,17 @@ const safeParse = (raw: string | null): BuildOrder | null => {
   try {
     const parsed = JSON.parse(raw) as BuildOrder;
     if (!parsed || typeof parsed !== "object" || typeof parsed.id !== "string") return null;
+    // Migrate legacy notes (string[]) → { id, text }[] in memory only.
+    if (Array.isArray(parsed.steps)) {
+      for (const step of parsed.steps) {
+        if (!step || !Array.isArray(step.notes)) continue;
+        step.notes = step.notes.map((n: unknown) =>
+          typeof n === "string"
+            ? { id: crypto.randomUUID(), text: n }
+            : (n as { id: string; text: string }),
+        );
+      }
+    }
     return parsed;
   } catch {
     return null;
