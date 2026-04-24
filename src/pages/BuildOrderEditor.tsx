@@ -17,15 +17,22 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { GripVertical } from "lucide-react";
+import { Download, GripVertical } from "lucide-react";
 import type { BuildOrder, BuildStep } from "@/types/buildOrder";
 import { getBuildOrder, saveBuildOrder } from "@/lib/storage";
 import { getCiv } from "@/data/civs";
 import { createEmptyStep } from "@/lib/buildOrder";
+import { exportAsJson, exportAsRtsOverlay } from "@/lib/exportBuildOrder";
 import { InlineText } from "@/components/editor/InlineText";
 import { StepCard } from "@/components/editor/StepCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 const OVERLAY_FEATURES =
@@ -294,6 +301,21 @@ const BuildOrderEditor = () => {
             >
               Preview Overlay
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" aria-label="Export">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => exportAsJson(bo)}>
+                  Export JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportAsRtsOverlay(bo)}>
+                  Export for RTS Overlay
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

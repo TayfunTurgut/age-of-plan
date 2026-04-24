@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Download } from "lucide-react";
 import { getCiv } from "@/data/civs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { getBuildOrder } from "@/lib/storage";
+import { exportAsJson, exportAsRtsOverlay } from "@/lib/exportBuildOrder";
 import type { BuildOrder } from "@/types/buildOrder";
 
 const OVERLAY_FEATURES =
@@ -54,6 +62,21 @@ const BuildOrderPlaceholder = () => {
           <Button asChild={!!bo} variant="outline" disabled={!bo}>
             {bo ? <Link to={`/build/${id}/edit`}>Edit</Link> : <span>Edit</span>}
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={!bo} aria-label="Export">
+                <Download className="h-4 w-4" /> Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => bo && exportAsJson(bo)}>
+                Export JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => bo && exportAsRtsOverlay(bo)}>
+                Export for RTS Overlay
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <Card className="mt-6 border-dashed bg-muted/30 p-8 text-center">
