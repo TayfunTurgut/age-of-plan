@@ -1,4 +1,5 @@
-import { useSortable } from "@dnd-kit/sortable";
+import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, MoreHorizontal, X } from "lucide-react";
 import type { CSSProperties } from "react";
@@ -31,6 +32,8 @@ const AGE_LABELS: Record<1 | 2 | 3 | 4, { roman: string; name: string }> = {
   4: { roman: "IV", name: "Imperial Age" },
 };
 
+type Note = { id: string; text: string };
+
 type Props = {
   step: BuildStep;
   index: number;
@@ -40,10 +43,12 @@ type Props = {
   onDelete: () => void;
   /** When true, render as a static (non-sortable) overlay clone. */
   overlay?: boolean;
+  /** True when a note from another step is currently hovering this step. */
+  isOverForeignNote?: boolean;
 };
 
 const stepHasContent = (s: BuildStep): boolean => {
-  if (s.notes.some((n) => n.trim().length > 0)) return true;
+  if (s.notes.some((n) => n.text.trim().length > 0)) return true;
   if (s.villagerCount > 0) return true;
   const r = s.resources;
   return [r.food, r.wood, r.gold, r.stone, r.builder, r.oliveOil ?? 0, r.silver ?? 0].some(
@@ -59,8 +64,13 @@ export const StepCard = ({
   onDuplicate,
   onDelete,
   overlay = false,
+  isOverForeignNote = false,
 }: Props) => {
-  const sortable = useSortable({ id: step.id, disabled: overlay });
+  const sortable = useSortable({
+    id: step.id,
+    disabled: overlay,
+    data: { type: "step", stepId: step.id },
+  });
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable;
 
   const style: CSSProperties = {
@@ -74,7 +84,7 @@ export const StepCard = ({
 
   const setNote = (i: number, text: string) => {
     const notes = step.notes.slice();
-    notes[i] = text;
+    notes[i] = { ...notes[i], text };
     update({ notes });
   };
   const deleteNote = (i: number) => {
@@ -82,7 +92,8 @@ export const StepCard = ({
     notes.splice(i, 1);
     update({ notes });
   };
-  const addNote = () => update({ notes: [...step.notes, ""] });
+  const addNote = () =>
+    update({ notes: [...step.notes, { id: crypto.randomUUID(), text: "" }] });
 
   const handleDelete = () => {
     if (stepHasContent(step)) {
@@ -95,6 +106,13 @@ export const StepCard = ({
   const extraResources: ResourceKey[] = [];
   if (civ?.id === "byzantines" || civ?.id === "ayyubids") extraResources.push("oliveOil");
   if (civ?.id === "macedonian") extraResources.push("silver");
+
+  // Droppable wrapper for the notes container so empty steps still accept drops.
+  const { setNodeRef: setNotesDroppableRef } = useDroppable({
+    id: `notes:${step.id}`,
+    data: { type: "notes-container", stepId: step.id },
+    disabled: overlay,
+  });
 
   return (
     <Card
@@ -263,38 +281,131 @@ export const StepCard = ({
         </div>
 
         {/* Notes */}
-        <div className="mt-3 space-y-1.5">
-          {step.notes.map((note, i) => (
-            <div key={i} className="flex items-start gap-2">
-              <div className="min-w-0 flex-1">
-                <InlineText
-                  value={note}
-                  multiline
-                  autoFocus={note === ""}
-                  placeholder="Add a note…"
-                  ariaLabel={`Note ${i + 1}`}
-                  onCommit={(raw) => setNote(i, raw)}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => deleteNote(i)}
-                aria-label="Delete note"
-                className="mt-1 rounded p-1 text-muted-foreground hover:bg-muted/50 hover:text-destructive"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
+        <div
+          ref={overlay ? undefined : setNotesDroppableRef}
+          className={cn(
+            "mt-3 rounded-md p-1 transition-shadow",
+            isOverForeignNote && "ring-1 ring-primary/40",
+          )}
+        >
+          {overlay ? (
+            <NotesStaticList notes={step.notes} />
+          ) : (
+            <SortableContext
+              items={step.notes.map((n) => n.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {step.notes.length === 0 ? (
+                <div className="flex min-h-12 items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground/70">
+                  Drop notes here
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {step.notes.map((note, i) => (
+                    <NoteRow
+                      key={note.id}
+                      note={note}
+                      stepId={step.id}
+                      index={i}
+                      onCommit={(text) => setNote(i, text)}
+                      onDelete={() => deleteNote(i)}
+                    />
+                  ))}
+                </div>
+              )}
+            </SortableContext>
+          )}
           <button
             type="button"
             onClick={addNote}
-            className="text-xs text-muted-foreground transition-colors hover:text-primary"
+            className="mt-1.5 text-xs text-muted-foreground transition-colors hover:text-primary"
           >
             + Add Note
           </button>
         </div>
       </div>
     </Card>
+  );
+};
+
+const NotesStaticList = ({ notes }: { notes: Note[] }) => {
+  if (notes.length === 0) {
+    return (
+      <div className="flex min-h-12 items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground/70">
+        Drop notes here
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-1.5">
+      {notes.map((n) => (
+        <div key={n.id} className="flex items-start gap-2 px-1 py-1 text-sm">
+          <GripVertical className="mt-0.5 h-3 w-3 text-muted-foreground/50" />
+          <span className="min-w-0 flex-1 truncate">{n.text || "Add a note…"}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+type NoteRowProps = {
+  note: Note;
+  stepId: string;
+  index: number;
+  onCommit: (text: string) => void;
+  onDelete: () => void;
+};
+
+const NoteRow = ({ note, stepId, index, onCommit, onDelete }: NoteRowProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: note.id,
+    data: { type: "note", noteId: note.id, sourceStepId: stepId },
+  });
+
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  if (isDragging) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="h-9 rounded-md border border-dashed border-primary/40 bg-transparent"
+      />
+    );
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-start gap-1">
+      <button
+        type="button"
+        aria-label="Drag note"
+        className="mt-1 flex h-6 w-4 cursor-grab items-center justify-center rounded text-muted-foreground/50 hover:text-foreground active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-3 w-3" />
+      </button>
+      <div className="min-w-0 flex-1">
+        <InlineText
+          value={note.text}
+          multiline
+          autoFocus={note.text === ""}
+          placeholder="Add a note…"
+          ariaLabel={`Note ${index + 1}`}
+          onCommit={onCommit}
+        />
+      </div>
+      <button
+        type="button"
+        onClick={onDelete}
+        aria-label="Delete note"
+        className="mt-1 rounded p-1 text-muted-foreground hover:bg-muted/50 hover:text-destructive"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
   );
 };
