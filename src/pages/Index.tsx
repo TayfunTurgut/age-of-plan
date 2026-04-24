@@ -1,18 +1,33 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Upload } from "lucide-react";
 import { CIVS, getCiv } from "@/data/civs";
 import { CivFlag } from "@/components/CivFlag";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/SiteFooter";
+import { ImportModal } from "@/components/ImportModal";
 
 const Index = () => {
+  const [importOpen, setImportOpen] = useState(false);
+
   return (
     <main
-      className="page-enter min-h-screen bg-background px-6 py-12 md:py-16"
+      className="page-enter relative min-h-screen bg-background px-6 py-12 md:py-16"
       style={{
         backgroundImage:
           "repeating-linear-gradient(135deg, hsl(var(--foreground) / 0.02) 0 1px, transparent 1px 8px)",
       }}
     >
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setImportOpen(true)}
+        className="absolute right-6 top-6"
+      >
+        <Upload className="h-4 w-4" /> Import
+      </Button>
+
       <div className="mx-auto max-w-7xl">
         <header className="mb-10 text-center md:mb-14">
           <h1 className="font-display text-4xl font-bold tracking-wide text-primary sm:text-5xl md:text-6xl">
@@ -50,6 +65,7 @@ const Index = () => {
         </ul>
       </div>
       <SiteFooter />
+      <ImportModal open={importOpen} onOpenChange={setImportOpen} />
     </main>
   );
 };

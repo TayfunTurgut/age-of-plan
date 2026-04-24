@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Trash2 } from "lucide-react";
+import { Trash2, Upload } from "lucide-react";
 import { getCiv } from "@/data/civs";
 import { CivFlag } from "@/components/CivFlag";
 import { SiteFooter } from "@/components/SiteFooter";
+import { ImportModal } from "@/components/ImportModal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { deleteBuildOrder, getBuildOrdersByCiv } from "@/lib/storage";
@@ -23,6 +24,7 @@ const CivDetail = () => {
   const civ = getCiv(id);
   const parent = getCiv(civ?.variantOf);
   const [builds, setBuilds] = useState<BuildOrder[]>([]);
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -72,9 +74,14 @@ const CivDetail = () => {
               <p className="mt-1 text-base text-muted-foreground">{civ.tagline}</p>
             </div>
           </div>
-          <Button asChild size="lg">
-            <Link to={`/build/new?civ=${civ.id}`}>New Build Order</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="lg">
+              <Link to={`/build/new?civ=${civ.id}`}>New Build Order</Link>
+            </Button>
+            <Button variant="outline" size="lg" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4" /> Import Build Order
+            </Button>
+          </div>
         </header>
 
         <section className="mt-10">
@@ -120,6 +127,11 @@ const CivDetail = () => {
         </section>
       </div>
       <SiteFooter />
+      <ImportModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        presetCivId={civ.id}
+      />
     </main>
   );
 };
