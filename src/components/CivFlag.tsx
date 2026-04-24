@@ -39,17 +39,10 @@ export const CivFlag = React.forwardRef<HTMLDivElement, CivFlagProps>(
           SIZE_CLASSES[size],
           className,
         )}
-        style={
-          showImage
-            ? {
-                backgroundImage: `linear-gradient(135deg, ${civ.flagColor.from}, ${civ.flagColor.to})`,
-                ...style,
-              }
-            : {
-                backgroundImage: `linear-gradient(135deg, ${civ.flagColor.from}, ${civ.flagColor.to})`,
-                ...style,
-              }
-        }
+        style={{
+          backgroundImage: `linear-gradient(135deg, ${civ.flagColor.from}, ${civ.flagColor.to})`,
+          ...style,
+        }}
         {...props}
       >
         {showImage ? (

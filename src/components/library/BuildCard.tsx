@@ -24,31 +24,20 @@ const BuildCardImpl = ({ bo, onDelete, hideCiv = false }: Props) => {
   const navigate = useNavigate();
   const civ = getCiv(bo.civilization);
 
-  const stop = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    stop(e);
+  const handleDelete = () => {
     if (window.confirm("Delete this build order?")) onDelete(bo.id);
   };
 
-  const openOverlay = (e: React.MouseEvent) => {
-    stop(e);
+  const openOverlay = () => {
     window.open(`/build/${bo.id}/run`, "aoe4-overlay", OVERLAY_FEATURES);
   };
 
-  const goEdit = (e: React.MouseEvent) => {
-    stop(e);
+  const goEdit = () => {
     navigate(`/build/${bo.id}/edit`);
   };
 
   return (
-    <Link
-      to={`/build/${bo.id}`}
-      className="focus-ring group block h-full rounded-lg"
-    >
+    <div className="group relative h-full">
       <Card
         className={cn(
           "relative flex h-full flex-col gap-2 border-border p-4 transition-all duration-200",
@@ -56,8 +45,15 @@ const BuildCardImpl = ({ bo, onDelete, hideCiv = false }: Props) => {
           "group-hover:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.4)]",
         )}
       >
+        {/* Overlay link covers the card; sits below the action row. */}
+        <Link
+          to={`/build/${bo.id}`}
+          aria-label={bo.name || "Open build order"}
+          className="focus-ring absolute inset-0 z-0 rounded-lg"
+        />
+
         {!hideCiv && civ && (
-          <div className="flex items-center gap-2">
+          <div className="pointer-events-none relative z-[1] flex items-center gap-2">
             <CivFlag civ={civ} size="sm" />
             <span className="truncate text-xs uppercase tracking-wider text-muted-foreground">
               {civ.name}
@@ -65,11 +61,11 @@ const BuildCardImpl = ({ bo, onDelete, hideCiv = false }: Props) => {
           </div>
         )}
 
-        <h3 className="line-clamp-2 font-display text-lg font-bold text-foreground">
+        <h3 className="pointer-events-none relative z-[1] line-clamp-2 font-display text-lg font-bold text-foreground">
           {bo.name || "Untitled build"}
         </h3>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="pointer-events-none relative z-[1] flex flex-wrap items-center gap-2">
           {bo.matchup ? (
             <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
               {bo.matchup}
@@ -80,13 +76,13 @@ const BuildCardImpl = ({ bo, onDelete, hideCiv = false }: Props) => {
           ) : null}
         </div>
 
-        <p className="mt-auto text-xs text-muted-foreground">
+        <p className="pointer-events-none relative z-[1] mt-auto text-xs text-muted-foreground">
           Edited {formatRelativeTime(bo.updatedAt)}
         </p>
 
         <div
           className={cn(
-            "action-row absolute right-2 top-2 flex gap-1 rounded-md bg-background/70 p-1 backdrop-blur",
+            "action-row absolute right-2 top-2 z-10 flex gap-1 rounded-md bg-background/70 p-1 backdrop-blur",
           )}
         >
           <Button
@@ -121,7 +117,7 @@ const BuildCardImpl = ({ bo, onDelete, hideCiv = false }: Props) => {
           </Button>
         </div>
       </Card>
-    </Link>
+    </div>
   );
 };
 

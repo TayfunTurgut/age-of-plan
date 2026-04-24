@@ -160,7 +160,6 @@ export const CIVS: Civ[] = [
     variantOf: "byzantines",
     tagline: "Varangian Guard • Silver economy • Mercenaries",
     flagColor: { from: "hsl(280 50% 30%)", to: "hsl(0 0% 80%)" },
-    // TODO: verify actual filename — may be CivIcon-MacedonianDynastyAoE4.webp
     flagIcon: "civilization_flag/CivIcon-MacedonianDynastyAoE4.webp",
   },
   {
