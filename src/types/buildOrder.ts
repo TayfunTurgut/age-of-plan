@@ -29,6 +29,12 @@ export type BuildStep = {
   id: string;
   age: 1 | 2 | 3 | 4;
   villagerCount: number;
+  /**
+   * When true, `villagerCount` is user-edited and not auto-synced from the
+   * resource breakdown. When false/undefined, `villagerCount` mirrors the
+   * sum of all resource assignments.
+   */
+  villagerCountManual?: boolean;
   populationCount?: number;
   resources: Resources;
   /** Canonical seconds from the start of the game. */

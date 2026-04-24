@@ -21,7 +21,7 @@ import { Download, GripVertical } from "lucide-react";
 import type { BuildOrder, BuildStep } from "@/types/buildOrder";
 import { getBuildOrder, saveBuildOrder } from "@/lib/storage";
 import { getCiv } from "@/data/civs";
-import { createEmptyStep } from "@/lib/buildOrder";
+import { computeVillagerCount, createEmptyStep } from "@/lib/buildOrder";
 import { exportAsJson, exportAsRtsOverlay } from "@/lib/exportBuildOrder";
 import { InlineText } from "@/components/editor/InlineText";
 import { StepCard } from "@/components/editor/StepCard";
@@ -104,8 +104,14 @@ const BuildOrderEditor = () => {
 
   const updateBo = (patch: Partial<BuildOrder>) => setBo({ ...bo, ...patch });
 
-  const setStep = (next: BuildStep) =>
-    updateBo({ steps: bo.steps.map((s) => (s.id === next.id ? next : s)) });
+  const setStep = (next: BuildStep) => {
+    // Auto-sync villagerCount from resources unless the step is locked.
+    const synced: BuildStep =
+      next.villagerCountManual === true
+        ? next
+        : { ...next, villagerCount: computeVillagerCount(next.resources) };
+    updateBo({ steps: bo.steps.map((s) => (s.id === synced.id ? synced : s)) });
+  };
 
   const insertStepAt = (idx: number) => {
     const prev = bo.steps[idx - 1];
@@ -396,6 +402,7 @@ const BuildOrderEditor = () => {
                           step={step}
                           index={i}
                           civ={civ}
+                          previousVillagerCount={i > 0 ? bo.steps[i - 1].villagerCount : undefined}
                           onChange={setStep}
                           onDuplicate={() => duplicateStep(i)}
                           onDelete={() => deleteStep(i)}

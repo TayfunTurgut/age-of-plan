@@ -1,4 +1,5 @@
 import type { BuildOrder } from "@/types/buildOrder";
+import { computeVillagerCount } from "@/lib/buildOrder";
 
 /**
  * localStorage abstraction for build orders.
@@ -19,15 +20,25 @@ const safeParse = (raw: string | null): BuildOrder | null => {
   try {
     const parsed = JSON.parse(raw) as BuildOrder;
     if (!parsed || typeof parsed !== "object" || typeof parsed.id !== "string") return null;
-    // Migrate legacy notes (string[]) → { id, text }[] in memory only.
     if (Array.isArray(parsed.steps)) {
       for (const step of parsed.steps) {
-        if (!step || !Array.isArray(step.notes)) continue;
-        step.notes = step.notes.map((n: unknown) =>
-          typeof n === "string"
-            ? { id: crypto.randomUUID(), text: n }
-            : (n as { id: string; text: string }),
-        );
+        if (!step) continue;
+        // Migrate legacy notes (string[]) → { id, text }[] in memory only.
+        if (Array.isArray(step.notes)) {
+          step.notes = step.notes.map((n: unknown) =>
+            typeof n === "string"
+              ? { id: crypto.randomUUID(), text: n }
+              : (n as { id: string; text: string }),
+          );
+        }
+        // Migrate villagerCountManual: default to false, recompute when in auto mode.
+        if (typeof step.villagerCountManual !== "boolean") {
+          step.villagerCountManual = false;
+        }
+        if (step.villagerCountManual === false && step.resources) {
+          const sum = computeVillagerCount(step.resources);
+          if (step.villagerCount !== sum) step.villagerCount = sum;
+        }
       }
     }
     return parsed;
