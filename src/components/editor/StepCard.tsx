@@ -25,6 +25,7 @@ import { InlineText } from "./InlineText";
 import { ResourcePill, type ResourceKey } from "./ResourcePill";
 import { formatTime, parseTime } from "@/lib/time";
 import { getAssetUrl } from "@/lib/assets";
+import { StepTags } from "./StepTags";
 
 const AGE_LABELS: Record<1 | 2 | 3 | 4, { roman: string; name: string }> = {
   1: { roman: "I", name: "Dark Age" },
@@ -89,6 +90,8 @@ type Props = {
 const stepHasContent = (s: BuildStep): boolean => {
   if (s.notes.some((n) => n.text.trim().length > 0)) return true;
   if (s.villagerCount > 0) return true;
+  if ((s.tags ?? []).some((t) => t.unit.trim().length > 0 || t.location.trim().length > 0))
+    return true;
   const r = s.resources;
   return [r.food, r.wood, r.gold, r.stone, r.builder, r.oliveOil ?? 0, r.silver ?? 0].some(
     (n) => n > 0,
@@ -365,6 +368,15 @@ export const StepCard = ({
             + Add Note
           </button>
         </div>
+
+        {/* Tags — unit position trackers */}
+        {!overlay && (
+          <StepTags
+            step={step}
+            civId={civ?.id ?? ""}
+            onUpdate={(tags) => update({ tags })}
+          />
+        )}
       </div>
     </Card>
   );
