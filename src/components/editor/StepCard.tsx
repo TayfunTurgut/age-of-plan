@@ -2,7 +2,7 @@ import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, MoreHorizontal, X } from "lucide-react";
-import type { CSSProperties } from "react";
+import { forwardRef, useState, type CSSProperties } from "react";
 import type { BuildStep, Resources } from "@/types/buildOrder";
 import type { Civ } from "@/data/civs";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,6 @@ import { InlineText } from "./InlineText";
 import { ResourcePill, type ResourceKey } from "./ResourcePill";
 import { formatTime, parseTime } from "@/lib/time";
 import { getAssetUrl } from "@/lib/assets";
-import { useState } from "react";
 
 const AGE_LABELS: Record<1 | 2 | 3 | 4, { roman: string; name: string }> = {
   1: { roman: "I", name: "Dark Age" },
@@ -35,10 +34,10 @@ const AGE_LABELS: Record<1 | 2 | 3 | 4, { roman: string; name: string }> = {
 };
 
 const AGE_ICON: Record<1 | 2 | 3 | 4, string> = {
-  1: "age/age_1.png",
-  2: "age/age_2.png",
-  3: "age/age_3.png",
-  4: "age/age_4.png",
+  1: "age/age_1.webp",
+  2: "age/age_2.webp",
+  3: "age/age_3.webp",
+  4: "age/age_4.webp",
 };
 
 const AGE_BORDER: Record<1 | 2 | 3 | 4, string> = {
@@ -48,25 +47,27 @@ const AGE_BORDER: Record<1 | 2 | 3 | 4, string> = {
   4: "border-l-primary",
 };
 
-const AgeIcon = ({ age, className }: { age: 1 | 2 | 3 | 4; className?: string }) => {
-  const [failed, setFailed] = useState(false);
-  if (failed) {
+const AgeIcon = forwardRef<HTMLSpanElement, { age: 1 | 2 | 3 | 4; className?: string }>(
+  ({ age, className }, ref) => {
+    const [failed, setFailed] = useState(false);
     return (
-      <span className={cn("inline-flex items-center justify-center text-xs font-bold", className)}>
-        {AGE_LABELS[age].roman}
+      <span ref={ref} className={cn("inline-flex items-center justify-center", className)}>
+        {failed ? (
+          <span className="text-xs font-bold">{AGE_LABELS[age].roman}</span>
+        ) : (
+          <img
+            src={getAssetUrl(AGE_ICON[age])}
+            alt={AGE_LABELS[age].roman}
+            loading="lazy"
+            onError={() => setFailed(true)}
+            className="h-full w-full object-contain"
+          />
+        )}
       </span>
     );
-  }
-  return (
-    <img
-      src={getAssetUrl(AGE_ICON[age])}
-      alt={AGE_LABELS[age].roman}
-      loading="lazy"
-      onError={() => setFailed(true)}
-      className={cn("object-contain", className)}
-    />
-  );
-};
+  },
+);
+AgeIcon.displayName = "AgeIcon";
 
 type Note = { id: string; text: string };
 
