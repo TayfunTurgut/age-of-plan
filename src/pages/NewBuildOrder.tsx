@@ -12,7 +12,7 @@ const NewBuildOrder = () => {
       <div className="mx-auto max-w-3xl">
         <Link
           to={civ ? `/civ/${civ.id}` : "/"}
-          className="inline-block font-serif text-sm text-muted-foreground transition-colors hover:text-primary"
+          className="inline-block text-sm text-muted-foreground transition-colors hover:text-primary"
         >
           ← Back{civ ? ` to ${civ.name}` : ""}
         </Link>
