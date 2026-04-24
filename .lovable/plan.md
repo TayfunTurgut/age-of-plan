@@ -1,89 +1,141 @@
-## Iteration 7 — Import / Export (final, with civ name round-trip fix)
+## Iteration 8 — Library, Navigation, Theme Toggle (final)
 
-### 1. New: `src/lib/importRtsOverlay.ts`
-- `CIV_DISPLAY_NAMES: Record<string, string>` — full 22-civ map from internal id → canonical RTS_Overlay display name:
-  - `english → "English"`, `french → "French"`, `hre → "Holy Roman Empire"`, `mongols → "Mongols"`, `rus → "Rus"`, `chinese → "Chinese"`, `delhi → "Delhi Sultanate"`, `abbasid → "Abbasid Dynasty"`, `ottomans → "Ottomans"`, `malians → "Malians"`, `byzantines → "Byzantines"`, `japanese → "Japanese"`, `ayyubids → "Ayyubids"`, `zhu-xi → "Zhu Xi's Legacy"`, `jeanne-darc → "Jeanne d'Arc"`, `order-of-the-dragon → "Order of the Dragon"`, `knights-templar → "Knights Templar"`, `house-of-lancaster → "House of Lancaster"`, `golden-horde → "Golden Horde"`, `macedonian → "Macedonian Dynasty"`, `sengoku-daimyo → "Sengoku Daimyo"`, `tughluqid → "Tughluqid Dynasty"`. ASCII apostrophes used so import↔export round-trips through `normalizeCivId`'s apostrophe-stripping.
-- `civIdToDisplayName(id: string): string` — lookup with fallback to raw id (so `"unknown"` and custom ids never throw).
-- `normalizeCivId(rawCiv: string): string` — case-insensitive, diacritic + apostrophe-stripped match across the 22 civs and common aliases ("HRE"/"Holy Roman Empire", "Delhi"/"Delhi Sultanate", "Abbasid"/"Abbasid Dynasty", "Zhu Xi"/"Zhu Xi's Legacy", "Jeanne"/"Jeanne d'Arc", "Tughluqid"/"Tughluqid Dynasty"/"Tughlaq", "Macedonian"/"Macedonian Dynasty", etc.). Returns `"unknown"` on miss.
-- `parseRtsOverlayJson(json: string): BuildOrder`:
-  - `JSON.parse` in try/catch → throw `"Invalid JSON: <msg>"`.
-  - Require top-level `build_order` array → else throw `"Missing build_order array."`
-  - Map `name`, `civilization` (via `normalizeCivId`), `author`, `source`, `description`.
-  - Per step: clamp `age` to 1..4 (default 1); `villager_count → villagerCount` (default 0); `population_count` (-1 → undefined); `resources` defaults each of `food/wood/gold/stone/builder` to 0, `oliveOil`/`silver` only when present and > 0; `time` string → `parseTime` (null → undefined); `notes: string[]` → `{id: crypto.randomUUID(), text}[]`.
-  - Fresh UUIDs for the build and every step. `createdAt = updatedAt = Date.now()`.
+### 1. New: `src/lib/relativeTime.ts`
+- `formatRelativeTime(timestamp: number): string` with thresholds:
+  - `< 60s` → `"just now"`
+  - `< 60min` → `"X min ago"` (singular `"1 min ago"`)
+  - `< 24h` → `"X hours ago"` (singular `"1 hour ago"`)
+  - `< 48h` → `"yesterday"`
+  - `< 30d` → `"X days ago"`
+  - else → `new Date(ts).toLocaleDateString()`
+- Pure function. No deps.
 
-### 2. New: `src/lib/importAoe4Guides.ts`
-- `extractAoe4GuidesId(input: string): string | null` — trim; if input contains `aoe4guides.com`, match `/build/([A-Za-z0-9]{20})` and return capture; else if input matches `^[A-Za-z0-9]{20}$`, return it; else `null`.
-- `fetchAoe4GuidesBuild(id: string): Promise<BuildOrder>`:
-  - `fetch(\`https://aoe4guides.com/api/builds/${id}\`)` wrapped in try/catch.
-  - On `TypeError` (network/CORS) → throw `"Could not fetch from aoe4guides.com — CORS may be blocked. Try pasting the build JSON directly instead."`
-  - On `!res.ok`: 404 → `"Build not found on aoe4guides.com."`; other → `"aoe4guides.com returned an error (status ${status})."`
-  - Defensive mapping with `?.`/`??`:
-    - `name` ← `data.title ?? data.name ?? "Imported build"`.
-    - `civilization` ← `normalizeCivId(data.civilization ?? data.civ ?? "")` (imported from `./importRtsOverlay`).
-    - `author` ← `data.author ?? data.user?.name ?? ""`.
-    - `description` ← `data.description ?? ""`.
-    - `source` ← `https://aoe4guides.com/build/{id}`.
-    - `steps` ← from `data.build_order ?? data.steps ?? []`. Per step: same shape as RTS_Overlay parser, but accept either `time` (string) or `time_seconds` (number); accept notes as either strings or `{text}` objects.
-  - Fresh UUIDs throughout. `createdAt = updatedAt = Date.now()`.
+### 2. New: `src/lib/theme.ts`
+- Storage key constant `THEME_KEY = "aoe4bo:theme"`, class constant `DARK_CLASS = "dark"`.
+- `getTheme(): "dark" | "light"`:
+  - If `localStorage[THEME_KEY]` is `"light"` or `"dark"` → return it.
+  - Else, fallback to `document.documentElement.classList.contains(DARK_CLASS) ? "dark" : "light"` so the inline bootstrap script in `index.html` is the authoritative source on first load.
+  - SSR-guarded with `typeof window !== "undefined"` (returns `"dark"` if not).
+- `setTheme(t: "dark" | "light"): void` → writes to localStorage in try/catch; toggles `DARK_CLASS` on `document.documentElement`.
+- `toggleTheme(): "dark" | "light"` → flips current theme, calls `setTheme`, returns new value.
 
-### 3. New: `src/lib/exportBuildOrder.ts`
-- Internal `triggerDownload(filename, contents, mime)` — `URL.createObjectURL(new Blob([contents], {type: mime}))`, temporary `<a download>` clicked and removed, `URL.revokeObjectURL` after.
-- `safeFilename(name: string): string` → `name.replace(/[^a-zA-Z0-9_-]/g, "_") || "build_order"`.
-- `exportAsJson(bo: BuildOrder): void` → `JSON.stringify(bo, null, 2)`, filename `${safe}.json`, mime `application/json`. Native schema preserved (lossless internal round-trip uses our internal civ ids).
-- `exportAsRtsOverlay(bo: BuildOrder): void` → builds:
-  - `name`
-  - **`civilization: civIdToDisplayName(bo.civilization)`** ← the round-trip fix so rts-overlay.github.io recognizes the civ.
-  - `author`, `source`, `description`.
-  - `build_order: bo.steps.map(s => ({ age: s.age, villager_count: s.villagerCount, population_count: s.populationCount ?? -1, resources: { ...s.resources }, time: s.timeSeconds !== undefined ? formatTime(s.timeSeconds) : "", notes: s.notes.map(n => n.text) }))`.
-  - Filename `${safe}_rts_overlay.json`.
+### 3. New: `src/hooks/useTheme.ts`
+- `useTheme()` returns `{ theme, toggleTheme }`.
+- `useState` initialized via `getTheme()`; `useEffect` on mount calls `setTheme(theme)` once as a safety net (idempotent if class already correct).
+- `toggleTheme` wraps `theme.toggleTheme()` and updates state.
 
-### 4. New: `src/components/ImportModal.tsx`
-- Props: `{ open: boolean; onOpenChange: (o: boolean) => void; presetCivId?: string }`.
-- shadcn `Dialog` containing shadcn `Tabs` with values `"aoe4guides"` and `"json"`.
-- **Tab 1 — aoe4guides**:
-  - `Input` (controlled) for URL or build ID; placeholder "Paste aoe4guides.com URL or build ID".
-  - `Button` "Import" — disabled while loading or empty. Click flow: `extractAoe4GuidesId` → if null, inline error "Couldn't parse a build ID from that input."; else `setLoading(true)`, `fetchAoe4GuidesBuild(id)`, then `applyImport(bo)`.
-  - `Loader2` spinner + inline error region below the input.
-- **Tab 2 — JSON**:
-  - `Textarea` (controlled), placeholder "Paste RTS_Overlay or exported JSON here".
-  - Dashed-border drop zone supporting both drag-and-drop (`onDragOver`/`onDrop`) and click-to-browse (hidden `<input type="file" accept=".json,application/json">`). Selected/dropped file is read via `FileReader.readAsText` and populates the textarea.
-  - `Button` "Import": try `parseRtsOverlayJson(text)`. On failure, try `JSON.parse(text)` and accept it if it matches our native schema (object with `id` and an array `steps[]` whose entries each have an `id`); if matched, regenerate UUIDs for the build, every step, and every note, and stamp fresh `createdAt`/`updatedAt = Date.now()` to avoid localStorage collisions on re-import. Otherwise show the original parse error.
-- `applyImport(bo)` shared:
-  - If `presetCivId` provided → override `bo.civilization = presetCivId`.
-  - Else if `bo.civilization === "unknown"` → sonner warning toast `"Could not detect civilization. Please set it manually after import."` and continue.
-  - `saveBuildOrder(bo)` → `onOpenChange(false)` → `navigate(\`/build/${bo.id}/edit\`)`.
-- Reset textarea / url / error / loading state when `open` flips to true.
+### 3.5. Edited: `index.html` — blocking inline theme script (flash fix)
+Insert immediately **before** the existing `<script type="module" src="/src/main.tsx">` line in `<body>`:
+```html
+<script>
+  try {
+    var t = localStorage.getItem("aoe4bo:theme");
+    if (t === "light") document.documentElement.classList.remove("dark");
+    else document.documentElement.classList.add("dark");
+  } catch (e) {}
+</script>
+```
+- Synchronous, runs before bundle paints → zero flash.
+- `var` + `try/catch` for max compatibility (private mode quirks, sandboxed iframes).
+- Default branch adds `dark` so first-time visitors get the medieval dark theme on first paint.
+- Storage key string is duplicated here intentionally (must run before any module loads); `src/lib/theme.ts` remains the single source of truth in app code.
 
-### 5. Edited: `src/pages/CivDetail.tsx`
-- Add `useState` `importOpen` and `ImportModal` import.
-- Add a secondary `Button variant="outline" size="lg"` "Import Build Order" alongside the existing "New Build Order" CTA.
-- Render `<ImportModal open={importOpen} onOpenChange={setImportOpen} presetCivId={civ.id} />` at the bottom of the page.
+### 4. New: `src/components/NavBar.tsx`
+- Sticky `<header class="sticky top-0 z-40 h-12 border-b bg-background/95 backdrop-blur">`.
+- Left: `<Link to="/">AoE4 Build Order Planner</Link>` in Cinzel, brass color, `truncate` on mobile.
+- Right (flex gap-2): `<NavLink to="/library">Library</NavLink>`, theme toggle button (`<Button variant="ghost" size="icon">` with lucide `Sun` when `theme === "dark"`, `Moon` when `"light"`, `aria-label="Toggle theme"`) calling `toggleTheme()`.
+- Reuses existing `NavLink` component if its API matches; else inline `<Link>` with active styling.
 
-### 6. Edited: `src/pages/Index.tsx`
-- Add `useState` `importOpen` and `ImportModal` import.
-- Add a small `Button variant="outline" size="sm"` "Import" positioned `absolute right-6 top-6` so the centered hero stays centered. Wrap the page container in `relative` if not already.
-- Render `<ImportModal open={importOpen} onOpenChange={setImportOpen} />` (no preset).
+### 5. New: `src/components/AppLayout.tsx`
+- Imports `NavBar`, `Outlet` from `react-router-dom`.
+- `useEffect` on mount: `setTheme(getTheme())` (safety net beyond the inline script).
+- Renders:
+  ```tsx
+  <div className="min-h-screen flex flex-col">
+    <NavBar />
+    <main className="flex-1"><Outlet /></main>
+  </div>
+  ```
+- `SiteFooter` stays inside individual pages (Library, Index) so the runner's existing layout isn't disturbed; this matches the current pattern.
 
-### 7. Edited: `src/pages/BuildOrderEditor.tsx`
-- In the existing top action bar (next to "Preview Overlay"), append a `DropdownMenu`:
-  - Trigger: `<Button variant="outline" size="sm"><Download className="h-4 w-4" /></Button>` (lucide `Download`).
-  - Items: "Export JSON" → `exportAsJson(bo)`; "Export for RTS Overlay" → `exportAsRtsOverlay(bo)`.
-- No other layout changes.
+### 6. Edited: `src/App.tsx`
+Restructure routes to nest under the layout, leaving the runner standalone:
+```tsx
+<Route element={<AppLayout />}>
+  <Route path="/" element={<Index />} />
+  <Route path="/library" element={<Library />} />
+  <Route path="/civ/:id" element={<CivDetail />} />
+  <Route path="/build/new" element={<NewBuildOrder />} />
+  <Route path="/build/:id" element={<BuildOrderPlaceholder />} />
+  <Route path="/build/:id/edit" element={<BuildOrderEditor />} />
+</Route>
+<Route path="/build/:id/run" element={<BuildOrderRunner />} />
+<Route path="*" element={<NotFound />} />
+```
+No change to `QueryClientProvider`, `TooltipProvider`, or toaster wrappers.
 
-### 8. Edited: `src/pages/BuildOrderPlaceholder.tsx`
-- Append the same `DropdownMenu` to the existing button row (after "Edit"). Disabled when `!bo`.
+### 7. New: `src/pages/Library.tsx`
+- Calls `getAllBuildOrders()` from `@/lib/storage` (corrected name — matches existing API, no duplicate function).
+- Header: Cinzel gold "Build Order Library" + count `<Badge>{builds.length} builds</Badge>`.
+- Toolbar row (flex flex-wrap gap-2):
+  - `Input` search (controlled, local state) — debounced 300ms via `useEffect` + `setTimeout`/`clearTimeout` into a separate `debouncedQuery` state. Filter substring (case-insensitive) over `name`, `author`, `matchup`, `description`.
+  - `Select` civ filter — option `"all"` (default) plus all 22 civs from `CIVS` in `@/data/civs`. Each option label shows `<CivFlag size="sm" />` + civ name.
+  - `Select` sort — `"updated"` (default), `"name-asc"`, `"name-desc"`, `"created-desc"`, `"created-asc"`. Sorted via `useMemo`.
+  - `Button variant="outline" size="sm"` "Import" → opens `ImportModal` (no preset civ).
+- Results: responsive grid `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4`. Card extracted as a small inline `BuildCard` component (also reused by §9):
+  - Top row: `<CivFlag size="sm" />` + civ name (muted, small).
+  - Build name in Cinzel, `line-clamp-2`.
+  - Optional matchup pill (`<Badge variant="secondary" className="text-xs">`).
+  - Optional author (muted small).
+  - `formatRelativeTime(bo.updatedAt)` prefixed with "Edited ".
+  - Action icons row revealed via `opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition`: Edit (`Pencil` → `navigate(\`/build/${id}/edit\`)`), Open Overlay (`Play` → `window.open(\`/build/${id}/run\`, "_blank")`), Delete (`Trash2` → `window.confirm("Delete this build?")` → `deleteBuildOrder(id)` → refresh local list state). All icons are `<Button variant="ghost" size="icon">` with `aria-label`s. `e.stopPropagation()` on each so card click still navigates to view.
+  - Card itself is a `<button>` or `<div role="button" onClick>` → `navigate(\`/build/${id}\`)`.
+- Empty states:
+  - No builds at all: "No build orders saved yet." with text links "Create one" (`/`) and "Import" (opens modal).
+  - Filters return zero: "No builds match your filters." with a "Clear filters" button.
+- Reads list from local state seeded by `getAllBuildOrders()`; refresh after delete/import. Listens to `storage` events (`window.addEventListener("storage", refresh)`) to stay in sync across tabs (cheap, defensive).
+- Renders `SiteFooter` at the bottom.
+- Renders `ImportModal` at root of page; opening triggered from toolbar button.
 
-### Reuse / contracts
-- `parseTime` / `formatTime` from `src/lib/time.ts`.
-- `saveBuildOrder` from `src/lib/storage.ts` (no internal changes).
-- `BuildOrder` / `BuildStep` / `Resources` from `src/types/buildOrder.ts`.
-- shadcn `Dialog`, `Tabs`, `DropdownMenu`, `Textarea`, `Input`, `Button`, sonner — all already present.
+### 8. Edited: `src/pages/CivDetail.tsx`
+- Replace existing build list rendering with the same `BuildCard` shape as Library (extract to `src/components/library/BuildCard.tsx` so both pages share it — keeps Library and CivDetail in lockstep).
+- Add the same sort `Select` (defaulting to `"updated"`).
+- Keep existing "New Build Order" and "Import Build Order" buttons; do not change the page header layout.
+- Continue calling `getBuildOrdersByCiv(civ.id)` (existing API). Sort via `useMemo` over the result.
+
+### 9. Edited: `src/pages/Index.tsx`
+- Remove the absolute-positioned "Import" button added in Iteration 7 (now lives in NavBar's Library link + Library page toolbar).
+- Below the civ grid subtitle, add a small flex row of text links: `<Link to="/library">Browse Library</Link>` + `<button onClick={openImport}>or import a build</button>`.
+- Keep `ImportModal` instance on this page wired to the new text-link trigger.
+
+### 10. Edited: `src/index.css` — light mode palette
+- Move existing dark medieval palette tokens into `.dark { ... }` block.
+- Add `:root { ... }` light palette inverting key tokens while keeping the medieval feel:
+  - `--background`: parchment cream (e.g. `40 35% 92%`)
+  - `--foreground`: dark slate (e.g. `30 15% 18%`)
+  - `--card`: slightly warmer cream
+  - `--border`: muted brass-tinted neutral
+  - `--muted` / `--muted-foreground`: warm beige / dim slate
+  - `--primary`: brass/gold (kept consistent across modes — the brand accent)
+  - `--primary-foreground`: dark slate for contrast on brass
+  - `--accent`, `--secondary`, `--destructive`, `--ring`: adjust analogously
+- Do not change Tailwind config or font tokens — Cinzel headings remain in both modes.
+- Verify existing components reading these tokens (cards, badges, inputs) render legibly in both modes; no per-component dark/light overrides needed.
+
+### Reuse / contracts (verified against current code)
+- `getAllBuildOrders`, `getBuildOrdersByCiv`, `getBuildOrder`, `deleteBuildOrder` from `src/lib/storage.ts` — names match exactly. **No `loadAllBuildOrders` reference anywhere.**
+- `BuildOrder` from `src/types/buildOrder.ts`.
+- `CIVS` and per-civ records from `src/data/civs.ts`.
+- `CivFlag` from `src/components/CivFlag.tsx`.
+- `ImportModal` from `src/components/ImportModal.tsx` (Iteration 7).
+- `SiteFooter` from `src/components/SiteFooter.tsx`.
+- shadcn `Button`, `Input`, `Select`, `Badge`, `Card` — all already installed.
+- lucide `Sun`, `Moon`, `Pencil`, `Play`, `Trash2`, `Search` — already used elsewhere or available.
 
 ### Out of scope
-- DnD logic, runner/timer, `civs.ts`, `storage.ts` internals, visual theme.
-- No CORS proxy, no server, no Supabase, no bundled assets.
+- DnD, runner/timer logic, import/export internals, `storage.ts` internals, `civs.ts`, `buildOrder.ts`, note rendering.
+- No Supabase, no server, no bundled assets, no router upgrade.
 
 ### File summary
-- **New**: `src/lib/importRtsOverlay.ts`, `src/lib/importAoe4Guides.ts`, `src/lib/exportBuildOrder.ts`, `src/components/ImportModal.tsx`.
-- **Edited**: `src/pages/Index.tsx`, `src/pages/CivDetail.tsx`, `src/pages/BuildOrderEditor.tsx`, `src/pages/BuildOrderPlaceholder.tsx`.
+- **New**: `src/pages/Library.tsx`, `src/components/NavBar.tsx`, `src/components/AppLayout.tsx`, `src/components/library/BuildCard.tsx`, `src/lib/relativeTime.ts`, `src/lib/theme.ts`, `src/hooks/useTheme.ts`.
+- **Edited**: `index.html` (inline theme script), `src/App.tsx` (layout route + `/library`), `src/pages/Index.tsx` (remove absolute Import, add library/import text links), `src/pages/CivDetail.tsx` (shared `BuildCard` + sort), `src/index.css` (light palette + move dark to `.dark`).

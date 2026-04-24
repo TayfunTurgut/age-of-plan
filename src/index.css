@@ -2,12 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
-/* AoE4 Build Order Planner — Dark Medieval design system.
-   All colors are HSL. Dark theme is the default (applied on :root). */
+/* AoE4 Build Order Planner — design system.
+   :root holds the LIGHT (parchment) palette.
+   .dark holds the DARK MEDIEVAL palette (default applied via index.html script). */
 
 @layer base {
   :root {
-    /* Surfaces — dark slate with a hint of warmth */
+    /* Light parchment palette */
+    --background: 38 40% 94%;
+    --foreground: 222 28% 14%;
+
+    --card: 38 38% 97%;
+    --card-foreground: 222 28% 14%;
+
+    --popover: 38 38% 97%;
+    --popover-foreground: 222 28% 14%;
+
+    --primary: 41 72% 42%;
+    --primary-foreground: 38 40% 98%;
+
+    --secondary: 38 26% 86%;
+    --secondary-foreground: 222 28% 18%;
+
+    --muted: 38 22% 88%;
+    --muted-foreground: 222 14% 38%;
+
+    --accent: 28 52% 38%;
+    --accent-foreground: 38 40% 98%;
+
+    --destructive: 0 62% 42%;
+    --destructive-foreground: 38 40% 98%;
+
+    --border: 38 24% 78%;
+    --input: 38 24% 80%;
+    --ring: 41 72% 42%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 38 38% 96%;
+    --sidebar-foreground: 222 22% 22%;
+    --sidebar-primary: 41 72% 42%;
+    --sidebar-primary-foreground: 38 40% 98%;
+    --sidebar-accent: 38 22% 90%;
+    --sidebar-accent-foreground: 222 28% 18%;
+    --sidebar-border: 38 24% 80%;
+    --sidebar-ring: 41 72% 42%;
+  }
+
+  .dark {
+    /* Dark medieval palette */
     --background: 222 28% 8%;
     --foreground: 38 38% 88%;
 
@@ -17,18 +60,15 @@
     --popover: 222 28% 9%;
     --popover-foreground: 38 38% 88%;
 
-    /* Brass / gold primary */
     --primary: 41 72% 58%;
     --primary-foreground: 222 30% 10%;
 
-    /* Parchment-tinted secondary surface */
     --secondary: 222 20% 16%;
     --secondary-foreground: 38 34% 86%;
 
     --muted: 222 18% 14%;
     --muted-foreground: 38 14% 62%;
 
-    /* Burnished copper accent */
     --accent: 28 52% 46%;
     --accent-foreground: 38 40% 94%;
 
@@ -38,8 +78,6 @@
     --border: 222 18% 20%;
     --input: 222 18% 20%;
     --ring: 41 72% 58%;
-
-    --radius: 0.5rem;
 
     --sidebar-background: 222 28% 7%;
     --sidebar-foreground: 38 32% 84%;
