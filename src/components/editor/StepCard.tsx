@@ -213,18 +213,12 @@ export const StepCard = ({
             <TooltipContent>{AGE_LABELS[step.age].name}</TooltipContent>
           </Tooltip>
 
-          {/* Vils */}
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground">Vils</span>
-            <InlineText
-              value={String(step.villagerCount)}
-              inputType="number"
-              ariaLabel="Villager count"
-              className="w-14"
-              validate={(raw) => /^\d+$/.test(raw.trim())}
-              onCommit={(raw) => update({ villagerCount: parseInt(raw, 10) || 0 })}
-            />
-          </div>
+          {/* Vils — auto-computed from resources unless locked */}
+          <VillagerBadge
+            step={step}
+            previousVillagerCount={previousVillagerCount}
+            onUpdate={update}
+          />
 
           {/* Pop */}
           <div className="flex items-center gap-1">
