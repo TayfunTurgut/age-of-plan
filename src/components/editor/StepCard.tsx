@@ -24,12 +24,48 @@ import {
 import { InlineText } from "./InlineText";
 import { ResourcePill, type ResourceKey } from "./ResourcePill";
 import { formatTime, parseTime } from "@/lib/time";
+import { getAssetUrl } from "@/lib/assets";
+import { useState } from "react";
 
 const AGE_LABELS: Record<1 | 2 | 3 | 4, { roman: string; name: string }> = {
   1: { roman: "I", name: "Dark Age" },
   2: { roman: "II", name: "Feudal Age" },
   3: { roman: "III", name: "Castle Age" },
   4: { roman: "IV", name: "Imperial Age" },
+};
+
+const AGE_ICON: Record<1 | 2 | 3 | 4, string> = {
+  1: "age/age_1.png",
+  2: "age/age_2.png",
+  3: "age/age_3.png",
+  4: "age/age_4.png",
+};
+
+const AGE_BORDER: Record<1 | 2 | 3 | 4, string> = {
+  1: "border-l-muted-foreground/40",
+  2: "border-l-green-600",
+  3: "border-l-blue-500",
+  4: "border-l-primary",
+};
+
+const AgeIcon = ({ age, className }: { age: 1 | 2 | 3 | 4; className?: string }) => {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <span className={cn("inline-flex items-center justify-center text-xs font-bold", className)}>
+        {AGE_LABELS[age].roman}
+      </span>
+    );
+  }
+  return (
+    <img
+      src={getAssetUrl(AGE_ICON[age])}
+      alt={AGE_LABELS[age].roman}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className={cn("object-contain", className)}
+    />
+  );
 };
 
 type Note = { id: string; text: string };
