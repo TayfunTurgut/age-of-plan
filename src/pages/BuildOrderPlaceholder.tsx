@@ -2,8 +2,12 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCiv } from "@/data/civs";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { getBuildOrder } from "@/lib/storage";
 import type { BuildOrder } from "@/types/buildOrder";
+
+const OVERLAY_FEATURES =
+  "width=420,height=520,menubar=no,toolbar=no,location=no,status=no,resizable=yes";
 
 const BuildOrderPlaceholder = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +21,11 @@ const BuildOrderPlaceholder = () => {
   const civ = getCiv(bo?.civilization);
   const backHref = civ ? `/civ/${civ.id}` : "/";
   const backLabel = civ ? `Back to ${civ.name}` : "All civilizations";
+
+  const openOverlay = () => {
+    if (!id) return;
+    window.open(`/build/${id}/run`, "aoe4-overlay", OVERLAY_FEATURES);
+  };
 
   return (
     <main className="page-enter min-h-screen bg-background px-6 py-10 md:py-14">
@@ -38,8 +47,19 @@ const BuildOrderPlaceholder = () => {
           </p>
         </header>
 
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Button onClick={openOverlay} disabled={!bo}>
+            Open Overlay
+          </Button>
+          <Button asChild={!!bo} variant="outline" disabled={!bo}>
+            {bo ? <Link to={`/build/${id}/edit`}>Edit</Link> : <span>Edit</span>}
+          </Button>
+        </div>
+
         <Card className="mt-6 border-dashed bg-muted/30 p-8 text-center">
-          <p className="text-muted-foreground">Viewer coming soon.</p>
+          <p className="text-muted-foreground">
+            Launch the overlay in a small popup window for use alongside the game.
+          </p>
         </Card>
       </div>
     </main>
