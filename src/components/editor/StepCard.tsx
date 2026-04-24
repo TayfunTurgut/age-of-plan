@@ -35,10 +35,10 @@ const AGE_LABELS: Record<1 | 2 | 3 | 4, { roman: string; name: string }> = {
 };
 
 const AGE_ICON: Record<1 | 2 | 3 | 4, string> = {
-  1: "age/age_1.png",
-  2: "age/age_2.png",
-  3: "age/age_3.png",
-  4: "age/age_4.png",
+  1: "age/age_1.webp",
+  2: "age/age_2.webp",
+  3: "age/age_3.webp",
+  4: "age/age_4.webp",
 };
 
 const AGE_BORDER: Record<1 | 2 | 3 | 4, string> = {

@@ -5,12 +5,12 @@ import { getAssetUrl } from "@/lib/assets";
 export type ResourceKey = "food" | "wood" | "gold" | "stone" | "builder" | "oliveOil" | "silver";
 
 const META: Record<ResourceKey, { label: string; dot: string; full: string; icon?: string }> = {
-  food: { label: "F", dot: "bg-red-500", full: "Food", icon: "resource/resource_food.png" },
-  wood: { label: "W", dot: "bg-green-600", full: "Wood", icon: "resource/resource_wood.png" },
-  gold: { label: "G", dot: "bg-yellow-500", full: "Gold", icon: "resource/resource_gold.png" },
-  stone: { label: "S", dot: "bg-gray-400", full: "Stone", icon: "resource/resource_stone.png" },
+  food: { label: "F", dot: "bg-red-500", full: "Food", icon: "resource/resource_food.webp" },
+  wood: { label: "W", dot: "bg-green-600", full: "Wood", icon: "resource/resource_wood.webp" },
+  gold: { label: "G", dot: "bg-yellow-500", full: "Gold", icon: "resource/resource_gold.webp" },
+  stone: { label: "S", dot: "bg-gray-400", full: "Stone", icon: "resource/resource_stone.webp" },
   builder: { label: "B", dot: "bg-blue-500", full: "Builders" },
-  oliveOil: { label: "O", dot: "bg-purple-500", full: "Olive Oil", icon: "resource/olive_oil.png" },
+  oliveOil: { label: "O", dot: "bg-purple-500", full: "Olive Oil", icon: "resource/oliveoil.webp" },
   silver: { label: "Sv", dot: "bg-zinc-200", full: "Silver" },
 };
 
