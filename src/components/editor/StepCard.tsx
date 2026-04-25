@@ -22,9 +22,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { InlineText } from "./InlineText";
+import { InlineTimer } from "./InlineTimer";
 import { ResourcePill, type ResourceKey } from "./ResourcePill";
 import { NoteRow } from "./NoteRow";
-import { formatTime, parseTime } from "@/lib/time";
 import { getAssetUrl } from "@/lib/assets";
 import { StepTags } from "./StepTags";
 
@@ -245,19 +245,11 @@ const StepCardImpl = ({
           {/* Time */}
           <div className="flex items-center gap-1">
             <span className="text-xs text-muted-foreground">Time</span>
-            <InlineText
-              value={step.timeSeconds === undefined ? "" : formatTime(step.timeSeconds)}
+            <InlineTimer
+              value={step.timeSeconds}
               ariaLabel="Time (m:ss)"
               placeholder="—"
-              className="w-16"
-              validate={(raw) => raw.trim() === "" || parseTime(raw) !== null}
-              onCommit={(raw) => {
-                if (raw.trim() === "") update({ timeSeconds: undefined });
-                else {
-                  const s = parseTime(raw);
-                  if (s !== null) update({ timeSeconds: s });
-                }
-              }}
+              onCommit={(next) => update({ timeSeconds: next })}
             />
           </div>
 
