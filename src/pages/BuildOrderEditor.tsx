@@ -17,7 +17,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Download, GripVertical } from "lucide-react";
+import { GripVertical, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { BuildOrder, BuildStep } from "@/types/buildOrder";
 import { getBuildOrder, saveBuildOrder, StorageQuotaError } from "@/lib/storage";
@@ -361,7 +361,7 @@ const BuildOrderEditor = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" aria-label="Export">
-                  <Download className="h-4 w-4" />
+                  <Upload className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

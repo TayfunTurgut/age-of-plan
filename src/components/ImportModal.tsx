@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Upload } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -237,7 +237,7 @@ export const ImportModal = ({ open, onOpenChange, presetCivId }: Props) => {
                   : "border-border hover:border-primary/60 hover:text-foreground",
               )}
             >
-              <Upload className="h-4 w-4" />
+              <Download className="h-4 w-4" />
               <span>Tap to browse or drop a .json file</span>
               <input
                 ref={fileInputRef}

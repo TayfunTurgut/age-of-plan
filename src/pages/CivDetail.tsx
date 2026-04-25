@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Upload } from "lucide-react";
+import { Download } from "lucide-react";
 import { getCiv } from "@/data/civs";
 import { CivFlag } from "@/components/CivFlag";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -98,7 +98,7 @@ const CivDetail = () => {
               <Link to={`/build/new?civ=${civ.id}`}>New Build Order</Link>
             </Button>
             <Button variant="outline" size="lg" onClick={() => setImportOpen(true)}>
-              <Upload className="h-4 w-4" /> Import Build Order
+              <Download className="h-4 w-4" /> Import Build Order
             </Button>
           </div>
         </header>

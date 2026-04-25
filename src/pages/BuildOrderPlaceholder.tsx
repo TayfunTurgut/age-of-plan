@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Download } from "lucide-react";
+import { Upload } from "lucide-react";
 import { getCiv } from "@/data/civs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,7 +91,7 @@ const BuildOrderPlaceholder = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" aria-label="Export">
-                <Download className="h-4 w-4" /> Export
+                <Upload className="h-4 w-4" /> Export
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

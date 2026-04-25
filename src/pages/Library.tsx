@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Upload } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import type { BuildOrder } from "@/types/buildOrder";
 import { CIVS } from "@/data/civs";
 import { CivFlag } from "@/components/CivFlag";
@@ -148,7 +148,7 @@ const Library = () => {
             onClick={() => setImportOpen(true)}
             className="ml-auto"
           >
-            <Upload className="h-4 w-4" /> Import
+            <Download className="h-4 w-4" /> Import
           </Button>
         </div>
 
