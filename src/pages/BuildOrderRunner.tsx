@@ -20,6 +20,7 @@ import { formatTime } from "@/lib/time";
 import { renderNote } from "@/lib/noteRenderer";
 import { useOverlayTimer } from "@/hooks/useOverlayTimer";
 import { type ResourceKey } from "@/components/editor/ResourcePill";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const AGE_ICON: Record<1 | 2 | 3 | 4, string> = {
@@ -82,26 +83,30 @@ const CompactResourceChip = ({
   const m = RESOURCE_META[resource];
   const [iconFailed, setIconFailed] = useState(false);
   return (
-    <span
-      title={m.label}
-      className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary/50 px-1.5 py-0.5"
-    >
-      {!iconFailed ? (
-        <img
-          src={getAssetUrl(m.icon)}
-          alt=""
-          aria-hidden
-          loading="lazy"
-          onError={() => setIconFailed(true)}
-          className="h-3.5 w-3.5 object-contain"
-        />
-      ) : (
-        <span className="text-[11px] font-medium text-muted-foreground">
-          {m.label[0]}
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="pointer-events-auto inline-flex select-none items-center gap-1 rounded-full border border-border bg-secondary/50 px-1.5 py-0.5">
+          {!iconFailed ? (
+            <img
+              src={getAssetUrl(m.icon)}
+              alt=""
+              aria-hidden
+              loading="lazy"
+              onError={() => setIconFailed(true)}
+              className="h-3.5 w-3.5 object-contain"
+            />
+          ) : (
+            <span className="text-[11px] font-medium text-muted-foreground">
+              {m.label[0]}
+            </span>
+          )}
+          <span className="text-sm tabular-nums text-foreground">{value}</span>
         </span>
-      )}
-      <span className="text-sm tabular-nums text-foreground">{value}</span>
-    </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6} collisionPadding={8}>
+        {m.label}
+      </TooltipContent>
+    </Tooltip>
   );
 };
 
@@ -280,24 +285,31 @@ const BuildOrderRunner = () => {
           </span>
         )}
         {totalSteps > 1 && (
-          <button
-            type="button"
-            aria-label={collapsed ? "Expand controls" : "Collapse controls"}
-            onClick={(e) => {
-              e.stopPropagation();
-              setCollapsed((c) => !c);
-            }}
-            className={cn(
-              "focus-ring flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground",
-              !collapsed && "ml-auto",
-            )}
-          >
-            {collapsed ? (
-              <ChevronDown className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronUp className="h-3.5 w-3.5" />
-            )}
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={collapsed ? "Expand controls" : "Collapse controls"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCollapsed((c) => !c);
+                }}
+                className={cn(
+                  "focus-ring flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground",
+                  !collapsed && "ml-auto",
+                )}
+              >
+                {collapsed ? (
+                  <ChevronDown className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronUp className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={6} collisionPadding={8}>
+              {collapsed ? "Expand controls" : "Collapse controls"}
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
 
@@ -308,15 +320,22 @@ const BuildOrderRunner = () => {
           onContextMenu={(e) => e.stopPropagation()}
           className="flex items-center gap-1 border-b border-border px-2 py-1"
         >
-          <button
-            type="button"
-            aria-label="Previous step"
-            disabled={stepIdx === 0}
-            onClick={prevStep}
-            className="focus-ring flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label="Previous step"
+                disabled={stepIdx === 0}
+                onClick={prevStep}
+                className="focus-ring flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={6} collisionPadding={8}>
+              Previous step
+            </TooltipContent>
+          </Tooltip>
           <span className="px-1 text-xs tabular-nums text-muted-foreground">
             <span className="text-foreground">{stepIdx + 1}</span>/{totalSteps}
           </span>
@@ -333,58 +352,86 @@ const BuildOrderRunner = () => {
             {formatTime(Math.floor(elapsed))}
           </span>
 
-          <button
-            type="button"
-            aria-label={isRunning ? "Pause" : "Play"}
-            onClick={toggle}
-            className="focus-ring flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-          >
-            {isRunning ? (
-              <Pause className="h-3.5 w-3.5" />
-            ) : (
-              <Play className="h-3.5 w-3.5" />
-            )}
-          </button>
-          <button
-            type="button"
-            aria-label="Reset timer"
-            onClick={() => {
-              reset();
-              setStepIdx(0);
-            }}
-            className="focus-ring flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            aria-label={
-              isAutoAdvance ? "Switch to manual mode" : "Switch to auto-advance mode"
-            }
-            onClick={toggleMode}
-            className={cn(
-              "focus-ring flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-muted/50",
-              isAutoAdvance
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {isAutoAdvance ? (
-              <Timer className="h-3.5 w-3.5" />
-            ) : (
-              <MousePointer className="h-3.5 w-3.5" />
-            )}
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={isRunning ? "Pause" : "Play"}
+                onClick={toggle}
+                className="focus-ring flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              >
+                {isRunning ? (
+                  <Pause className="h-3.5 w-3.5" />
+                ) : (
+                  <Play className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={6} collisionPadding={8}>
+              {isRunning ? "Pause" : "Play"}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label="Reset timer"
+                onClick={() => {
+                  reset();
+                  setStepIdx(0);
+                }}
+                className="focus-ring flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={6} collisionPadding={8}>
+              Reset timer
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={
+                  isAutoAdvance ? "Switch to manual mode" : "Switch to auto-advance mode"
+                }
+                onClick={toggleMode}
+                className={cn(
+                  "focus-ring flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-muted/50",
+                  isAutoAdvance
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {isAutoAdvance ? (
+                  <Timer className="h-3.5 w-3.5" />
+                ) : (
+                  <MousePointer className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={6} collisionPadding={8}>
+              {isAutoAdvance ? "Switch to manual mode" : "Switch to auto-advance mode"}
+            </TooltipContent>
+          </Tooltip>
 
-          <button
-            type="button"
-            aria-label="Next step"
-            disabled={stepIdx >= totalSteps - 1}
-            onClick={advanceStep}
-            className="focus-ring flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
-          >
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label="Next step"
+                disabled={stepIdx >= totalSteps - 1}
+                onClick={advanceStep}
+                className="focus-ring flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={6} collisionPadding={8}>
+              Next step
+            </TooltipContent>
+          </Tooltip>
         </div>
       )}
 
@@ -414,15 +461,24 @@ const BuildOrderRunner = () => {
             )}
           >
             <div className="flex items-center gap-2">
-              <img
-                src={getAssetUrl(AGE_ICON[step.age])}
-                alt={AGE_LABELS[step.age]}
-                loading="lazy"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = "none";
-                }}
-                className="h-5 w-5 object-contain"
-              />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex">
+                    <img
+                      src={getAssetUrl(AGE_ICON[step.age])}
+                      alt={AGE_LABELS[step.age]}
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = "none";
+                      }}
+                      className="h-5 w-5 object-contain"
+                    />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={6} collisionPadding={8}>
+                  {AGE_LABELS[step.age]}
+                </TooltipContent>
+              </Tooltip>
               <span className="text-xs text-muted-foreground">
                 {AGE_LABELS[step.age]}
               </span>
@@ -474,7 +530,9 @@ const BuildOrderRunner = () => {
                 {step.notes.map((n) => (
                   <li key={n.id} className="flex gap-1.5">
                     <span className="mt-1 inline-block h-1 w-1 shrink-0 rounded-full bg-muted-foreground/60" />
-                    <span className="min-w-0 flex-1">{renderNote(n.text)}</span>
+                    <span className="min-w-0 flex-1">
+                      {renderNote(n.text, { withTooltip: true })}
+                    </span>
                   </li>
                 ))}
               </ul>

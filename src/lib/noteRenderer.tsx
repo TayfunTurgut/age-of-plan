@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { getAssetUrl } from "@/lib/assets";
+import { ICON_CATALOG } from "@/data/iconCatalog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 /**
  * Parses tokens like `{{category/file.png}}` (or `.webp`) inside note text and
@@ -44,10 +46,36 @@ export const parseNoteTokens = (text: string): NoteToken[] => {
   return tokens;
 };
 
-const NoteIcon = ({ path }: { path: string }) => {
+let pathToLabel: Map<string, string> | null = null;
+const getPathToLabel = (): Map<string, string> => {
+  if (pathToLabel) return pathToLabel;
+  pathToLabel = new Map();
+  for (const entry of ICON_CATALOG) pathToLabel.set(entry.path, entry.name);
+  return pathToLabel;
+};
+
+const labelFromPath = (path: string): string => {
+  const fromCatalog = getPathToLabel().get(path);
+  if (fromCatalog) return fromCatalog;
+  const file = path.split("/").pop() ?? path;
+  const base = file.replace(/\.(png|webp)$/i, "");
+  return base
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(" ");
+};
+
+const NoteIcon = ({
+  path,
+  withTooltip = false,
+}: {
+  path: string;
+  withTooltip?: boolean;
+}) => {
   const [failed, setFailed] = useState(false);
   if (failed) return null;
-  return (
+  const img = (
     <img
       src={getAssetUrl(path)}
       alt=""
@@ -56,6 +84,17 @@ const NoteIcon = ({ path }: { path: string }) => {
       className="mx-0.5 inline h-5 w-5 align-text-bottom"
     />
   );
+  if (!withTooltip) return img;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex">{img}</span>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6} collisionPadding={8}>
+        {labelFromPath(path)}
+      </TooltipContent>
+    </Tooltip>
+  );
 };
 
 /** Cheap check: does the text contain at least one icon token?
@@ -63,13 +102,16 @@ const NoteIcon = ({ path }: { path: string }) => {
 export const hasNoteTokens = (text: string): boolean =>
   parseNoteTokens(text).some((t) => t.kind === "image");
 
-export const renderNote = (text: string): ReactNode[] => {
+export const renderNote = (
+  text: string,
+  opts?: { withTooltip?: boolean },
+): ReactNode[] => {
   const tokens = parseNoteTokens(text);
   return tokens.map((tok, i) =>
     tok.kind === "text" ? (
       <span key={`t-${i}`}>{tok.value}</span>
     ) : (
-      <NoteIcon key={`i-${i}`} path={tok.path} />
+      <NoteIcon key={`i-${i}`} path={tok.path} withTooltip={opts?.withTooltip} />
     ),
   );
 };
