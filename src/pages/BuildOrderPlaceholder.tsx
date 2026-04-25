@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Upload } from "lucide-react";
 import { getCiv } from "@/data/civs";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import OverlayPreview from "@/components/OverlayPreview";
 import { getBuildOrder } from "@/lib/storage";
 import { exportAsJson, exportAsRtsOverlay } from "@/lib/exportBuildOrder";
 import type { BuildOrder } from "@/types/buildOrder";
@@ -105,11 +105,9 @@ const BuildOrderPlaceholder = () => {
           </DropdownMenu>
         </div>
 
-        <Card className="mt-6 border-dashed bg-muted/30 p-8 text-center">
-          <p className="text-muted-foreground">
-            Launch the overlay in a small popup window for use alongside the game.
-          </p>
-        </Card>
+        <div className="mt-8">
+          <OverlayPreview bo={bo} />
+        </div>
       </div>
     </main>
   );
