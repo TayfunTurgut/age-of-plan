@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- shadcn pattern: re-exports `toast` alongside the Toaster component. */
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast } from "sonner";
 

@@ -1,3 +1,7 @@
+/* eslint-disable react-refresh/only-export-components -- this module exports
+ * pure token-parsing helpers (parseNoteTokens / hasNoteTokens / renderNote)
+ * alongside the internal NoteIcon component. Splitting them buys nothing
+ * but extra files. */
 import { useState, type ReactNode } from "react";
 import { getAssetUrl } from "@/lib/assets";
 import { ICON_CATALOG } from "@/data/iconCatalog";
