@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { getAssetUrl } from "@/lib/assets";
 
 /**
- * Parses tokens like `@category/file.png@` (or `.webp`) inside note text and
+ * Parses tokens like `{{category/file.png}}` (or `.webp`) inside note text and
  * returns a ReactNode array with inline icons interleaved with plain text.
  *
  * Parsing and rendering are split:
@@ -17,7 +17,7 @@ export type NoteToken =
   | { kind: "text"; value: string }
   | { kind: "image"; path: string };
 
-const TOKEN_RE = /@([^@\s]+\.(?:png|webp))@/g;
+const TOKEN_RE = /\{\{([^{}\s]+\.(?:png|webp))\}\}/g;
 const MAX_CACHE = 200;
 const tokenCache = new Map<string, NoteToken[]>();
 
@@ -57,6 +57,11 @@ const NoteIcon = ({ path }: { path: string }) => {
     />
   );
 };
+
+/** Cheap check: does the text contain at least one icon token?
+ *  Reuses the parse cache — calling this never re-tokenizes. */
+export const hasNoteTokens = (text: string): boolean =>
+  parseNoteTokens(text).some((t) => t.kind === "image");
 
 export const renderNote = (text: string): ReactNode[] => {
   const tokens = parseNoteTokens(text);

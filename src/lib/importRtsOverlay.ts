@@ -89,6 +89,31 @@ const CIV_ALIASES: Record<string, string> = {
   "tughluqid dynasty": "tughluqid",
   tughlaq: "tughluqid",
   "tughlaq dynasty": "tughluqid",
+
+  // aoe4world 2-letter civ codes — recognized so imports that smuggle in
+  // raw codes (e.g. older aoe4guides exports) still resolve correctly.
+  ab: "abbasid",
+  ay: "ayyubids",
+  by: "byzantines",
+  ch: "chinese",
+  de: "delhi",
+  en: "english",
+  fr: "french",
+  gol: "golden-horde",
+  hl: "house-of-lancaster",
+  hr: "hre",
+  ja: "japanese",
+  je: "jeanne-darc",
+  kt: "knights-templar",
+  ma: "malians",
+  mac: "macedonian",
+  mo: "mongols",
+  od: "order-of-the-dragon",
+  ot: "ottomans",
+  ru: "rus",
+  sen: "sengoku-daimyo",
+  tug: "tughluqid",
+  zx: "zhu-xi",
 };
 
 export const normalizeCivId = (rawCiv: string): string => {
@@ -115,6 +140,12 @@ const positiveOrUndefined = (v: unknown): number | undefined => {
 
 type RawNote = string | { text?: string; note?: string };
 
+/** RTS_Overlay icon token syntax `@path.ext@` → our internal `{{path.ext}}`. */
+const convertIconTokens = (text: string): string =>
+  text.includes("@")
+    ? text.replace(/@([^@\s]+\.(?:png|webp))@/g, "{{$1}}")
+    : text;
+
 const mapNotes = (raw: unknown): { id: string; text: string }[] => {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -124,7 +155,7 @@ const mapNotes = (raw: unknown): { id: string; text: string }[] => {
       return "";
     })
     .filter((t) => t.length > 0)
-    .map((text) => ({ id: crypto.randomUUID(), text }));
+    .map((text) => ({ id: crypto.randomUUID(), text: convertIconTokens(text) }));
 };
 
 type RawResources = Record<string, unknown>;

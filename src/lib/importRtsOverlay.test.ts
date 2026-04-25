@@ -141,4 +141,26 @@ describe("parseRtsOverlayJson", () => {
       parseRtsOverlayJson(JSON.stringify({ civilization: "English" })),
     ).toThrow(/Missing build_order/);
   });
+
+  it("converts RTS_Overlay @...@ icon tokens to internal {{...}} on import", () => {
+    const json = JSON.stringify({
+      civilization: "English",
+      build_order: [
+        {
+          age: 1,
+          notes: [
+            "build @unit-english/longbowman-2.webp@",
+            "no token here",
+            "@bad path.png@ stays put",
+          ],
+        },
+      ],
+    });
+    const bo = parseRtsOverlayJson(json);
+    expect(bo.steps[0].notes.map((n) => n.text)).toEqual([
+      "build {{unit-english/longbowman-2.webp}}",
+      "no token here",
+      "@bad path.png@ stays put",
+    ]);
+  });
 });

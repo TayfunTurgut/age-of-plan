@@ -4,27 +4,15 @@
  * Tags answer "where should my <unit> be at this step?" — e.g. King at
  * Food (Sheep), Khan at Scouting (Map). Both fields accept free text;
  * these lists drive the autocomplete suggestions only.
+ *
+ * Unit suggestions come from each civ's unique-unit list in the generated
+ * civData (sourced from aoe4world). Common units like Scout / Villager are
+ * appended for every civ.
  */
 
-export const COMMON_UNITS = ["Scout", "Villager"] as const;
+import { CIV_DATA } from "./generated/civData";
 
-/** Civ-specific signature units, keyed by civ id from `src/data/civs.ts`. */
-export const UNIT_PRESETS: Record<string, string[]> = {
-  english: ["King"],
-  "house-of-lancaster": ["King"],
-  hre: ["Prelate"],
-  "order-of-the-dragon": ["Prelate", "Gilded Villager"],
-  mongols: ["Khan"],
-  "golden-horde": ["Khan"],
-  chinese: ["Imperial Official"],
-  "zhu-xi": ["Imperial Official"],
-  rus: ["Warrior Monk"],
-  delhi: ["Scholar"],
-  tughluqid: ["Scholar"],
-  japanese: ["Shinobi"],
-  "sengoku-daimyo": ["Shinobi"],
-  "jeanne-darc": ["Jeanne d'Arc"],
-};
+export const COMMON_UNITS = ["Scout", "Villager"] as const;
 
 export const LOCATION_PRESETS: string[] = [
   "Food (Sheep)",
@@ -46,6 +34,7 @@ export const LOCATION_PRESETS: string[] = [
 ];
 
 export const getUnitPresets = (civId: string): string[] => {
-  const civSpecific = UNIT_PRESETS[civId] ?? [];
-  return Array.from(new Set([...COMMON_UNITS, ...civSpecific]));
+  const civ = CIV_DATA.find((c) => c.id === civId);
+  const unique = civ?.uniqueUnits ?? [];
+  return Array.from(new Set([...COMMON_UNITS, ...unique]));
 };

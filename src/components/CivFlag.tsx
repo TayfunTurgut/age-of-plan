@@ -25,7 +25,7 @@ interface CivFlagProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export const CivFlag = React.forwardRef<HTMLDivElement, CivFlagProps>(
-  ({ civ, size = "md", className, style, ...props }, ref) => {
+  ({ civ, size = "md", className, ...props }, ref) => {
     const [failed, setFailed] = React.useState(false);
     const [loaded, setLoaded] = React.useState(false);
     const showImage = !failed && Boolean(civ.flagIcon);
@@ -35,14 +35,10 @@ export const CivFlag = React.forwardRef<HTMLDivElement, CivFlagProps>(
         ref={ref}
         aria-hidden
         className={cn(
-          "flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-primary/40 font-display font-bold text-primary-foreground shadow-sm",
+          "flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-primary/40 bg-muted font-display font-bold text-foreground shadow-sm",
           SIZE_CLASSES[size],
           className,
         )}
-        style={{
-          backgroundImage: `linear-gradient(135deg, ${civ.flagColor.from}, ${civ.flagColor.to})`,
-          ...style,
-        }}
         {...props}
       >
         {showImage ? (
@@ -58,7 +54,7 @@ export const CivFlag = React.forwardRef<HTMLDivElement, CivFlagProps>(
             )}
           />
         ) : (
-          <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">{initialsFor(civ.name)}</span>
+          <span>{initialsFor(civ.name)}</span>
         )}
       </div>
     );

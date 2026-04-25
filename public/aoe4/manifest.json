@@ -1,0 +1,19 @@
+{
+  "generatedAt": "2026-04-25T00:02:01.116Z",
+  "sources": {
+    "units": "https://data.aoe4world.com/units/all.json",
+    "buildings": "https://data.aoe4world.com/buildings/all.json",
+    "technologies": "https://data.aoe4world.com/technologies/all.json",
+    "flags": "https://github.com/aoe4world/explorer/tree/main/assets/flags",
+    "resources": "https://github.com/aoe4world/explorer/tree/main/assets/resources",
+    "ages": "copied from prior public/assets/aoe4/age/ (rts-overlay)"
+  },
+  "counts": {
+    "civs": 22,
+    "units": 981,
+    "buildings": 635,
+    "technologies": 1688,
+    "icons": 983,
+    "pathMigrations": 727
+  }
+}

@@ -73,6 +73,12 @@ const mapCiv = (raw: unknown): string => {
  *  - Replace `<br>` with newlines.
  *  - Strip remaining tags.
  *  - Decode the handful of HTML entities aoe4guides actually emits.
+ *
+ *  TODO: convert recognized aoe4guides icon `<img src=...>` paths into our
+ *  `{{path.ext}}` tokens here so imports preserve inline icons instead of
+ *  flattening to the alt-text label. Out of scope for the initial token
+ *  migration; requires mapping aoe4guides's CDN paths to our local asset
+ *  paths via the icon catalog.
  */
 const htmlToText = (html: string): string => {
   if (!html) return "";

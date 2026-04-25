@@ -91,6 +91,51 @@ describe("exportBuildOrder round-trip via RTS_Overlay import", () => {
     }
   });
 
+  it("converts internal {{...}} icon tokens to RTS_Overlay @...@ on export", () => {
+    const bo: BuildOrder = {
+      ...sampleBuildOrder(),
+      steps: [
+        {
+          ...sampleBuildOrder().steps[0],
+          notes: [
+            { id: "n1", text: "build {{unit-english/longbowman-2.webp}}" },
+            { id: "n2", text: "no token" },
+            { id: "n3", text: "{{bad path.png}} stays put" },
+          ],
+        },
+      ],
+    };
+    const payload = toRtsOverlayPayload(bo);
+    expect(payload.build_order[0].notes).toEqual([
+      "build @unit-english/longbowman-2.webp@",
+      "no token",
+      "{{bad path.png}} stays put",
+    ]);
+  });
+
+  it("icon tokens round-trip {{...}} → @...@ → {{...}}", () => {
+    const original: BuildOrder = {
+      ...sampleBuildOrder(),
+      steps: [
+        {
+          ...sampleBuildOrder().steps[0],
+          notes: [
+            {
+              id: "n1",
+              text: "build {{unit-french/royal-knight-2.webp}} fast",
+            },
+          ],
+        },
+      ],
+    };
+    const reimported = parseRtsOverlayJson(
+      JSON.stringify(toRtsOverlayPayload(original)),
+    );
+    expect(reimported.steps[0].notes[0].text).toBe(
+      "build {{unit-french/royal-knight-2.webp}} fast",
+    );
+  });
+
   it("RTS_Overlay-style civ round-trips to the same internal id", () => {
     const cases = [
       "english",

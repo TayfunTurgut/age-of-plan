@@ -18,6 +18,12 @@ const triggerDownload = (filename: string, contents: string, mime: string): void
 const safeFilename = (name: string): string =>
   name.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "") || "build_order";
 
+/** Our internal `{{path.ext}}` → RTS_Overlay's `@path.ext@`. */
+const toRtsTokens = (text: string): string =>
+  text.includes("{{")
+    ? text.replace(/\{\{([^{}\s]+\.(?:png|webp))\}\}/g, "@$1@")
+    : text;
+
 /** Pure serializer for the RTS_Overlay payload shape — exposed so tests
  *  (and any non-DOM consumers) can use it without triggering a download. */
 export const toRtsOverlayPayload = (bo: BuildOrder) => ({
@@ -32,7 +38,7 @@ export const toRtsOverlayPayload = (bo: BuildOrder) => ({
     population_count: s.populationCount ?? -1,
     resources: { ...s.resources },
     time: s.timeSeconds !== undefined ? formatTime(s.timeSeconds) : "",
-    notes: s.notes.map((n) => n.text),
+    notes: s.notes.map((n) => toRtsTokens(n.text)),
   })),
 });
 

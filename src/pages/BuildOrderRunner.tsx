@@ -21,10 +21,10 @@ import { ResourcePill, type ResourceKey } from "@/components/editor/ResourcePill
 import { cn } from "@/lib/utils";
 
 const AGE_ICON: Record<1 | 2 | 3 | 4, string> = {
-  1: "age/age_1.webp",
-  2: "age/age_2.webp",
-  3: "age/age_3.webp",
-  4: "age/age_4.webp",
+  1: "ages/age_1.webp",
+  2: "ages/age_2.webp",
+  3: "ages/age_3.webp",
+  4: "ages/age_4.webp",
 };
 
 const AGE_BORDER: Record<1 | 2 | 3 | 4, string> = {

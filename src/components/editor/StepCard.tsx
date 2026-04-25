@@ -1,7 +1,7 @@
 import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Lock, MoreHorizontal, Unlock, Users, X } from "lucide-react";
+import { GripVertical, Lock, MoreHorizontal, Unlock, Users } from "lucide-react";
 import { forwardRef, memo, useState, type CSSProperties } from "react";
 import type { BuildStep, Resources } from "@/types/buildOrder";
 import type { Civ } from "@/data/civs";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { InlineText } from "./InlineText";
 import { ResourcePill, type ResourceKey } from "./ResourcePill";
+import { NoteRow } from "./NoteRow";
 import { formatTime, parseTime } from "@/lib/time";
 import { getAssetUrl } from "@/lib/assets";
 import { StepTags } from "./StepTags";
@@ -35,10 +36,10 @@ const AGE_LABELS: Record<1 | 2 | 3 | 4, { roman: string; name: string }> = {
 };
 
 const AGE_ICON: Record<1 | 2 | 3 | 4, string> = {
-  1: "age/age_1.webp",
-  2: "age/age_2.webp",
-  3: "age/age_3.webp",
-  4: "age/age_4.webp",
+  1: "ages/age_1.webp",
+  2: "ages/age_2.webp",
+  3: "ages/age_3.webp",
+  4: "ages/age_4.webp",
 };
 
 const AGE_BORDER: Record<1 | 2 | 3 | 4, string> = {
@@ -351,6 +352,7 @@ const StepCardImpl = ({
                       key={note.id}
                       note={note}
                       stepId={step.id}
+                      civId={civ?.id ?? ""}
                       index={i}
                       onCommit={(text) => setNote(i, text)}
                       onDelete={() => deleteNote(i)}
@@ -400,68 +402,6 @@ const NotesStaticList = ({ notes }: { notes: Note[] }) => {
           <span className="min-w-0 flex-1 truncate">{n.text || "Add a note…"}</span>
         </div>
       ))}
-    </div>
-  );
-};
-
-type NoteRowProps = {
-  note: Note;
-  stepId: string;
-  index: number;
-  onCommit: (text: string) => void;
-  onDelete: () => void;
-};
-
-const NoteRow = ({ note, stepId, index, onCommit, onDelete }: NoteRowProps) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: note.id,
-    data: { type: "note", noteId: note.id, sourceStepId: stepId },
-  });
-
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  if (isDragging) {
-    return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        className="h-9 rounded-md border border-dashed border-primary/40 bg-transparent"
-      />
-    );
-  }
-
-  return (
-    <div ref={setNodeRef} style={style} className="flex items-start gap-1">
-      <button
-        type="button"
-        aria-label="Drag note"
-        className="relative mt-1 flex h-6 w-4 cursor-grab items-center justify-center rounded text-muted-foreground/50 hover:text-foreground active:cursor-grabbing before:absolute before:-inset-2 before:content-[''] focus-ring"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-3 w-3" />
-      </button>
-      <div className="min-w-0 flex-1">
-        <InlineText
-          value={note.text}
-          multiline
-          autoFocus={note.text === ""}
-          placeholder="Add a note…"
-          ariaLabel={`Note ${index + 1}`}
-          onCommit={onCommit}
-        />
-      </div>
-      <button
-        type="button"
-        onClick={onDelete}
-        aria-label="Delete note"
-        className="focus-ring mt-1 rounded p-1 text-muted-foreground hover:bg-muted/50 hover:text-destructive"
-      >
-        <X className="h-4 w-4" />
-      </button>
     </div>
   );
 };

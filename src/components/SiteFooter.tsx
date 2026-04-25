@@ -11,7 +11,16 @@ export const SiteFooter = () => {
         >
           Game Content Usage Rules
         </a>{" "}
-        using assets from Age of Empires IV. Not endorsed by or affiliated with Microsoft.
+        using assets from Age of Empires IV. Game data and icons provided by{" "}
+        <a
+          href="https://aoe4world.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline transition-colors hover:text-primary"
+        >
+          aoe4world.com
+        </a>
+        . Not endorsed by or affiliated with Microsoft.
       </p>
     </footer>
   );

@@ -158,6 +158,42 @@ describe("storage migration", () => {
     expect(bo!.steps[0].villagerCount).toBe(5);
   });
 
+  it("rewrites @path.ext@ to {{path.ext}} and re-points old paths at the new aoe4world layout", () => {
+    const legacy = {
+      id: "bo-tok",
+      name: "Tok",
+      civilization: "english",
+      createdAt: 1,
+      updatedAt: 2,
+      steps: [
+        {
+          id: "s1",
+          age: 1,
+          villagerCount: 0,
+          villagerCountManual: false,
+          resources: { food: 0, wood: 0, gold: 0, stone: 0, builder: 0 },
+          notes: [
+            { id: "n1", text: "build @unit-french/royal-knight-2.webp@" },
+            { id: "n2", text: "no token here" },
+            { id: "n3", text: "@bad path.png@ stays put" },
+            { id: "n4", text: "already-migrated {{images/units/longbowman-2.png}}" },
+          ],
+        },
+      ],
+    };
+    window.localStorage.setItem("aoe4bo:bo:bo-tok", JSON.stringify(legacy));
+    const bo = getBuildOrder("bo-tok");
+    expect(bo!.steps[0].notes.map((n) => n.text)).toEqual([
+      // @-form was rewritten to {{...}}, then the path was rewritten to the new layout.
+      "build {{images/units/royal-knight-2.png}}",
+      "no token here",
+      "@bad path.png@ stays put",
+      "already-migrated {{images/units/longbowman-2.png}}",
+    ]);
+    const raw = window.localStorage.getItem("aoe4bo:bo:bo-tok")!;
+    expect(raw).toContain("{{images/units/royal-knight-2.png}}");
+  });
+
   it("preserves manual villagerCount values that diverge from the resource sum", () => {
     const stored = {
       id: "bo-manual",
