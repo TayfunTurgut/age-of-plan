@@ -17,7 +17,7 @@ const isBrowser = (): boolean => typeof window !== "undefined" && !!window.local
 
 const keyFor = (id: string): string => `${KEY_PREFIX}${id}`;
 
-const ResourcesSchema: z.ZodType<Resources> = z.object({
+const ResourcesSchema = z.object({
   food: z.number(),
   wood: z.number(),
   gold: z.number(),
@@ -35,7 +35,7 @@ const TagSchema = z.object({
   location: z.string(),
 });
 
-const BuildStepSchema: z.ZodType<BuildStep> = z.object({
+const BuildStepSchema = z.object({
   id: z.string(),
   age: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
   villagerCount: z.number(),
@@ -47,7 +47,7 @@ const BuildStepSchema: z.ZodType<BuildStep> = z.object({
   tags: z.array(TagSchema).optional(),
 });
 
-const BuildOrderSchema: z.ZodType<BuildOrder> = z.object({
+const BuildOrderSchema = z.object({
   id: z.string(),
   name: z.string(),
   civilization: z.string(),
