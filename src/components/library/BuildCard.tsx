@@ -11,7 +11,7 @@ import { formatRelativeTime } from "@/lib/relativeTime";
 import { cn } from "@/lib/utils";
 
 const OVERLAY_FEATURES =
-  "width=380,height=420,menubar=no,toolbar=no,location=no,status=no,resizable=yes";
+  "popup=yes,width=380,height=240,menubar=no,toolbar=no,location=no,status=no,resizable=yes";
 
 type Props = {
   bo: BuildOrder;

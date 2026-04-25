@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   ArrowRight,
@@ -18,6 +18,7 @@ import { getCiv } from "@/data/civs";
 import { getAssetUrl } from "@/lib/assets";
 import { formatTime } from "@/lib/time";
 import { renderNote } from "@/lib/noteRenderer";
+import { useFontSize } from "@/hooks/useFontSize";
 import { useOverlayTimer } from "@/hooks/useOverlayTimer";
 import { type ResourceKey } from "@/components/editor/ResourcePill";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -122,6 +123,21 @@ const BuildOrderRunner = () => {
     }
   });
 
+  // Subscribe to font-size changes from the main window via the storage event.
+  useFontSize();
+
+  // Mark <html> so index.css can neutralize #root layout and let <main>
+  // shrink to max-content — without this the popup window can never wrap its
+  // content (default block-level stretch makes <main> fill innerWidth).
+  useEffect(() => {
+    document.documentElement.classList.add("runner-overlay");
+    return () => {
+      document.documentElement.classList.remove("runner-overlay");
+    };
+  }, []);
+
+  const mainRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     try {
       sessionStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0");
@@ -139,7 +155,6 @@ const BuildOrderRunner = () => {
   }, [id]);
 
   const totalSteps = bo?.steps.length ?? 0;
-  const stepsLength = totalSteps;
   const nextStepTime = bo?.steps[stepIdx + 1]?.timeSeconds;
 
   const {
@@ -199,24 +214,46 @@ const BuildOrderRunner = () => {
     return () => window.removeEventListener("keydown", onKey);
   }, [bo, toggle, reset, toggleMode]);
 
-  // Resize the popup so its OUTER dimensions exactly wrap the content.
-  // window.resizeTo sets outer bounds, but scrollWidth/scrollHeight are inner;
-  // we add the live chrome delta (title bar, borders) so the window doesn't
-  // shrink by that delta on every re-fire.
-  useEffect(() => {
-    const raf = window.requestAnimationFrame(() => {
+  // Resize the popup so its OUTER dimensions wrap the actual content panel.
+  // We measure the <main> (not documentElement) so #root padding can't bleed
+  // into the size, and use a ResizeObserver so async reflows (icon load,
+  // font-size change, content swap) all trigger a re-fit. A small hysteresis
+  // absorbs pure sub-pixel jitter without leaving a visible gap when the
+  // content shrinks (e.g., when the user picks a smaller font size).
+  useLayoutEffect(() => {
+    const target = mainRef.current;
+    if (!target) return;
+    const HYST = 2;
+    let raf = 0;
+    const apply = () => {
+      raf = 0;
       const chromeW = Math.max(0, window.outerWidth - window.innerWidth);
       const chromeH = Math.max(0, window.outerHeight - window.innerHeight);
-      const w = document.documentElement.scrollWidth + chromeW;
-      const h = document.documentElement.scrollHeight + chromeH;
-      try {
-        window.resizeTo(Math.max(w, 280), Math.min(h, 700));
-      } catch {
-        // Some browsers block resizeTo on non-popup or after user resize.
+      const wantW = target.offsetWidth + chromeW;
+      const wantH = Math.min(target.offsetHeight + chromeH, 700);
+      const grew = wantW > window.outerWidth || wantH > window.outerHeight;
+      const shrunk =
+        window.outerWidth - wantW > HYST || window.outerHeight - wantH > HYST;
+      if (grew || shrunk) {
+        try {
+          window.resizeTo(wantW, wantH);
+        } catch {
+          // resizeTo is blocked on non-popup windows / after user resize.
+        }
       }
-    });
-    return () => window.cancelAnimationFrame(raf);
-  }, [stepIdx, stepsLength, collapsed]);
+    };
+    const schedule = () => {
+      if (raf) return;
+      raf = window.requestAnimationFrame(apply);
+    };
+    const ro = new ResizeObserver(schedule);
+    ro.observe(target);
+    schedule();
+    return () => {
+      ro.disconnect();
+      if (raf) window.cancelAnimationFrame(raf);
+    };
+  }, [bo]);
 
   if (bo === undefined) {
     return (
@@ -230,6 +267,7 @@ const BuildOrderRunner = () => {
   if (bo === null) {
     return (
       <main
+        ref={mainRef}
         className="dark flex flex-col items-center justify-center gap-3 px-6 py-6 text-center text-foreground"
         style={{ background: "hsl(var(--background) / 0.95)" }}
       >
@@ -269,6 +307,7 @@ const BuildOrderRunner = () => {
 
   return (
     <main
+      ref={mainRef}
       className="dark relative flex flex-col text-foreground"
       style={{ background: "hsl(var(--background) / 0.95)" }}
     >

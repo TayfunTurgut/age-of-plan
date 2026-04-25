@@ -141,6 +141,30 @@
   }
 }
 
+/* Runner popup mode: BuildOrderRunner adds `runner-overlay` to <html> so the
+ * popup window can shrink to its actual content extent. Without this, <main>'s
+ * default block-level stretch makes it fill innerWidth, so window.resizeTo()
+ * never shrinks below the opener's initial width. */
+html.runner-overlay,
+html.runner-overlay body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+}
+html.runner-overlay #root {
+  display: inline-block;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+html.runner-overlay main {
+  width: max-content;
+  /* Cap so long notes wrap instead of stretching the window arbitrarily. */
+  max-width: 480px;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   @keyframes page-fade {
     from {

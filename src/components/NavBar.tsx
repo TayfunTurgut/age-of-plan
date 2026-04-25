@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FontSizeToggle } from "@/components/FontSizeToggle";
 import { NavLink } from "@/components/NavLink";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ export const NavBar = () => {
           >
             Library
           </NavLink>
+          <FontSizeToggle />
           <Button
             type="button"
             variant="ghost"

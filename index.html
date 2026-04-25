@@ -37,6 +37,14 @@
         else document.documentElement.classList.add("dark");
       } catch (e) {}
     </script>
+    <script>
+      try {
+        var fs = parseInt(localStorage.getItem("aoe4bo:fontSize") || "17", 10);
+        if ([14, 15, 16, 17, 18, 20].indexOf(fs) >= 0) {
+          document.documentElement.style.fontSize = fs + "px";
+        }
+      } catch (e) {}
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

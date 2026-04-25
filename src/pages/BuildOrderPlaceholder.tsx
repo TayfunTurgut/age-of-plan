@@ -15,7 +15,7 @@ import { exportAsJson, exportAsRtsOverlay } from "@/lib/exportBuildOrder";
 import type { BuildOrder } from "@/types/buildOrder";
 
 const OVERLAY_FEATURES =
-  "width=380,height=420,menubar=no,toolbar=no,location=no,status=no,resizable=yes";
+  "popup=yes,width=380,height=240,menubar=no,toolbar=no,location=no,status=no,resizable=yes";
 
 const BuildOrderPlaceholder = () => {
   const { id } = useParams<{ id: string }>();
