@@ -50,9 +50,9 @@ export const InlineTimer = ({
   const cancellingRef = useRef(false);
 
   useEffect(() => {
-    if (editing && mmRef.current) {
-      mmRef.current.focus();
-      mmRef.current.select();
+    if (editing && ssRef.current) {
+      ssRef.current.focus();
+      ssRef.current.select();
     }
   }, [editing]);
 
