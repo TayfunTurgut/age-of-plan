@@ -20,13 +20,22 @@ import { getIconsForCiv, type IconEntry } from "@/data/iconCatalog";
  * here so the consumer just spreads `{onKeyDown}` onto the textarea.
  */
 
+export type PickerPlacement = "below" | "above";
+
+export type PickerPosition = {
+  top: number;
+  left: number;
+  maxHeight: number;
+  placement: PickerPlacement;
+};
+
 export type IconAutocompleteState = {
   isOpen: boolean;
   query: string;
   filteredIcons: IconEntry[];
   selectedIndex: number;
-  /** Position of the textarea, used by the picker to anchor itself. */
-  position: { top: number; left: number };
+  /** Anchor + size constraints the picker should render with. */
+  position: PickerPosition;
   /** Spread on the textarea's `onKeyDown`. */
   onKeyDown: (e: KeyboardEvent<HTMLTextAreaElement>) => void;
   /** Call after the textarea's value/selection changes (in onChange and onClick/onKeyUp). */
@@ -72,6 +81,12 @@ const filterIcons = (all: IconEntry[], query: string): IconEntry[] => {
   );
 };
 
+const PICKER_PREFERRED_HEIGHT = 320;
+const PICKER_WIDTH = 320;
+const ANCHOR_GAP = 4;
+const VIEWPORT_PADDING = 8;
+const MIN_USEFUL_HEIGHT = 120;
+
 export const useIconAutocomplete = ({
   textareaRef,
   civId,
@@ -81,7 +96,12 @@ export const useIconAutocomplete = ({
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [position, setPosition] = useState<PickerPosition>({
+    top: 0,
+    left: 0,
+    maxHeight: PICKER_PREFERRED_HEIGHT,
+    placement: "below",
+  });
   // Cache where the active `{{` lives so we can replace it precisely.
   const triggerStartRef = useRef(-1);
 
@@ -97,6 +117,60 @@ export const useIconAutocomplete = ({
       filteredIcons.length === 0 ? 0 : Math.min(i, filteredIcons.length - 1),
     );
   }, [filteredIcons]);
+
+  /** Compute the picker's anchor + size given the current textarea rect and
+   *  the visual viewport. Uses `visualViewport` (when available) so we react
+   *  to the mobile keyboard shrinking the usable area.
+   *
+   *  The picker is rendered with `position: fixed`, so coordinates are
+   *  viewport-relative. We must NOT add `window.scrollY/scrollX` —
+   *  `getBoundingClientRect()` is already viewport-relative. */
+  const computePosition = useCallback((): PickerPosition | null => {
+    const ta = textareaRef.current;
+    if (!ta) return null;
+    const rect = ta.getBoundingClientRect();
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    const viewportTop = vv?.offsetTop ?? 0;
+    const viewportLeft = vv?.offsetLeft ?? 0;
+    const viewportWidth = vv?.width ?? window.innerWidth;
+    const viewportHeight = vv?.height ?? window.innerHeight;
+    const viewportRight = viewportLeft + viewportWidth;
+    const viewportBottom = viewportTop + viewportHeight;
+
+    const spaceBelow = Math.max(
+      0,
+      viewportBottom - rect.bottom - ANCHOR_GAP - VIEWPORT_PADDING,
+    );
+    const spaceAbove = Math.max(
+      0,
+      rect.top - viewportTop - ANCHOR_GAP - VIEWPORT_PADDING,
+    );
+
+    // Prefer below; flip above only when below is too cramped AND above has
+    // more room. This keeps desktop behavior identical and only flips on
+    // short mobile viewports (e.g., when the on-screen keyboard is open).
+    const placeBelow = spaceBelow >= MIN_USEFUL_HEIGHT || spaceBelow >= spaceAbove;
+
+    const left = Math.max(
+      viewportLeft + VIEWPORT_PADDING,
+      Math.min(rect.left, viewportRight - PICKER_WIDTH - VIEWPORT_PADDING),
+    );
+
+    if (placeBelow) {
+      return {
+        top: rect.bottom + ANCHOR_GAP,
+        left,
+        maxHeight: Math.min(PICKER_PREFERRED_HEIGHT, spaceBelow),
+        placement: "below",
+      };
+    }
+    return {
+      top: rect.top - ANCHOR_GAP,
+      left,
+      maxHeight: Math.min(PICKER_PREFERRED_HEIGHT, spaceAbove),
+      placement: "above",
+    };
+  }, [textareaRef]);
 
   /** Re-evaluate trigger state after the textarea's value/selection changed. */
   const refresh = useCallback(() => {
@@ -115,15 +189,30 @@ export const useIconAutocomplete = ({
     triggerStartRef.current = start;
     setQuery(ta.value.slice(start + 2, cursor));
     setIsOpen(true);
-    // Anchor the picker at the textarea bottom-left. The cursor-relative
-    // version is too fragile to be worth the complexity; the panel only has
-    // to be near the input.
-    const rect = ta.getBoundingClientRect();
-    setPosition({
-      top: rect.bottom + window.scrollY + 4,
-      left: rect.left + window.scrollX,
-    });
-  }, [textareaRef]);
+    const next = computePosition();
+    if (next) setPosition(next);
+  }, [textareaRef, computePosition]);
+
+  // Keep the picker anchored while it's open: the visual viewport changes
+  // when the on-screen keyboard appears/dismisses, and any scroll moves the
+  // textarea relative to the viewport.
+  useEffect(() => {
+    if (!isOpen) return;
+    const update = () => {
+      const next = computePosition();
+      if (next) setPosition(next);
+    };
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", update);
+    vv?.addEventListener("scroll", update);
+    // Capture-phase scroll catches scrolling inside any ancestor container.
+    window.addEventListener("scroll", update, true);
+    return () => {
+      vv?.removeEventListener("resize", update);
+      vv?.removeEventListener("scroll", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [isOpen, computePosition]);
 
   const close = useCallback(() => {
     setIsOpen(false);

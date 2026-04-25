@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { getAssetUrl } from "@/lib/assets";
 import { ICON_CATALOG } from "@/data/iconCatalog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { TouchableTooltip } from "@/components/ui/touchable-tooltip";
 
 /**
  * Parses tokens like `{{category/file.png}}` (or `.webp`) inside note text and
@@ -86,14 +86,9 @@ const NoteIcon = ({
   );
   if (!withTooltip) return img;
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex">{img}</span>
-      </TooltipTrigger>
-      <TooltipContent side="top" sideOffset={6} collisionPadding={8}>
-        {labelFromPath(path)}
-      </TooltipContent>
-    </Tooltip>
+    <TouchableTooltip content={labelFromPath(path)} side="top">
+      <span className="inline-flex">{img}</span>
+    </TouchableTooltip>
   );
 };
 

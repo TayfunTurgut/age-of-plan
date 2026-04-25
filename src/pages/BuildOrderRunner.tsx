@@ -22,6 +22,7 @@ import { useFontSize } from "@/hooks/useFontSize";
 import { useOverlayTimer } from "@/hooks/useOverlayTimer";
 import { type ResourceKey } from "@/components/editor/ResourcePill";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { TouchableTooltip } from "@/components/ui/touchable-tooltip";
 import { cn } from "@/lib/utils";
 
 const AGE_ICON: Record<1 | 2 | 3 | 4, string> = {
@@ -84,30 +85,25 @@ const CompactResourceChip = ({
   const m = RESOURCE_META[resource];
   const [iconFailed, setIconFailed] = useState(false);
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="pointer-events-auto inline-flex select-none items-center gap-1 rounded-full border border-border bg-secondary/50 px-1.5 py-0.5">
-          {!iconFailed ? (
-            <img
-              src={getAssetUrl(m.icon)}
-              alt=""
-              aria-hidden
-              loading="lazy"
-              onError={() => setIconFailed(true)}
-              className="h-3.5 w-3.5 object-contain"
-            />
-          ) : (
-            <span className="text-[11px] font-medium text-muted-foreground">
-              {m.label[0]}
-            </span>
-          )}
-          <span className="text-sm tabular-nums text-foreground">{value}</span>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="top" sideOffset={6} collisionPadding={8}>
-        {m.label}
-      </TooltipContent>
-    </Tooltip>
+    <TouchableTooltip content={m.label} side="top">
+      <span className="pointer-events-auto inline-flex select-none items-center gap-1 rounded-full border border-border bg-secondary/50 px-1.5 py-0.5">
+        {!iconFailed ? (
+          <img
+            src={getAssetUrl(m.icon)}
+            alt=""
+            aria-hidden
+            loading="lazy"
+            onError={() => setIconFailed(true)}
+            className="h-3.5 w-3.5 object-contain"
+          />
+        ) : (
+          <span className="text-[11px] font-medium text-muted-foreground">
+            {m.label[0]}
+          </span>
+        )}
+        <span className="text-sm tabular-nums text-foreground">{value}</span>
+      </span>
+    </TouchableTooltip>
   );
 };
 
@@ -500,24 +496,19 @@ const BuildOrderRunner = () => {
             )}
           >
             <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex">
-                    <img
-                      src={getAssetUrl(AGE_ICON[step.age])}
-                      alt={AGE_LABELS[step.age]}
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.display = "none";
-                      }}
-                      className="h-5 w-5 object-contain"
-                    />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={6} collisionPadding={8}>
-                  {AGE_LABELS[step.age]}
-                </TooltipContent>
-              </Tooltip>
+              <TouchableTooltip content={AGE_LABELS[step.age]} side="bottom">
+                <span className="inline-flex">
+                  <img
+                    src={getAssetUrl(AGE_ICON[step.age])}
+                    alt={AGE_LABELS[step.age]}
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                    className="h-5 w-5 object-contain"
+                  />
+                </span>
+              </TouchableTooltip>
               <span className="text-xs text-muted-foreground">
                 {AGE_LABELS[step.age]}
               </span>

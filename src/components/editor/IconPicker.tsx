@@ -6,12 +6,13 @@ import {
 } from "@/data/iconCatalog";
 import { getAssetUrl } from "@/lib/assets";
 import { cn } from "@/lib/utils";
+import type { PickerPosition } from "@/hooks/useIconAutocomplete";
 
 type Props = {
   query: string;
   filteredIcons: IconEntry[];
   selectedIndex: number;
-  position: { top: number; left: number };
+  position: PickerPosition;
   onPick: (index: number) => void;
   onHover: (index: number) => void;
 };
@@ -50,9 +51,17 @@ const IconPickerImpl = ({
       aria-label="Icon picker"
       className={cn(
         "fixed z-50 w-[320px] overflow-y-auto rounded-md border border-border bg-popover text-sm shadow-lg",
-        "max-h-[320px]",
       )}
-      style={{ top: position.top, left: position.left }}
+      style={{
+        top: position.top,
+        left: position.left,
+        maxHeight: position.maxHeight,
+        // When there isn't enough room below the textarea (mobile keyboard
+        // open, etc.), the hook reports placement: "above" with `top` set to
+        // the textarea's top edge; translateY(-100%) shifts the panel up by
+        // its own rendered height so it sits *above* the textarea.
+        transform: position.placement === "above" ? "translateY(-100%)" : undefined,
+      }}
       // Prevent the textarea from losing focus when the user clicks a row.
       onMouseDown={(e) => e.preventDefault()}
     >
