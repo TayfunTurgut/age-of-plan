@@ -56,6 +56,7 @@ const ResourcePillImpl = ({ resource, value, onChange }: Props) => {
           const n = parseInt(e.target.value, 10);
           onChange(Number.isNaN(n) ? 0 : Math.max(0, n));
         }}
+        onFocus={(e) => e.currentTarget.select()}
         aria-label={meta.full}
         className="w-12 bg-transparent text-sm text-foreground outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />

@@ -126,8 +126,7 @@ const PickerRow = ({ entry, isSelected, rowRef, onClick, onMouseEnter }: RowProp
           className="h-5 w-5 shrink-0 object-contain"
         />
       )}
-      <span className="flex-1 truncate">{entry.name}</span>
-      <span className="truncate text-[10px] text-muted-foreground">{entry.path}</span>
+      <span className="flex-1">{entry.name}</span>
     </button>
   );
 };

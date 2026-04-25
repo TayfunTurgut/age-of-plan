@@ -216,7 +216,7 @@ const BuildOrderRunner = () => {
   if (bo === undefined) {
     return (
       <div
-        className="dark min-h-screen text-foreground"
+        className="dark text-foreground"
         style={{ background: "hsl(var(--background) / 0.95)" }}
       />
     );
@@ -225,7 +225,7 @@ const BuildOrderRunner = () => {
   if (bo === null) {
     return (
       <main
-        className="dark flex min-h-screen flex-col items-center justify-center gap-3 px-6 text-center text-foreground"
+        className="dark flex flex-col items-center justify-center gap-3 px-6 py-6 text-center text-foreground"
         style={{ background: "hsl(var(--background) / 0.95)" }}
       >
         <h1 className="font-display text-lg font-bold text-primary">Build not found</h1>
@@ -264,7 +264,7 @@ const BuildOrderRunner = () => {
 
   return (
     <main
-      className="dark relative flex min-h-screen flex-col text-foreground"
+      className="dark relative flex flex-col text-foreground"
       style={{ background: "hsl(var(--background) / 0.95)" }}
     >
       {/* Title bar */}
