@@ -200,7 +200,7 @@ const readFromStorage = (
     }
   }
 
-  return result.data;
+  return result.data as BuildOrder;
 };
 
 export const getAllBuildOrders = (): BuildOrder[] => {
