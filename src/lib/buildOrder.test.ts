@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { BuildStep, Resources } from "@/types/buildOrder";
 import {
+  cloneStep,
   computeVillagerCount,
   createEmptyBuildOrder,
   createEmptyStep,
@@ -68,6 +69,72 @@ describe("createEmptyStep", () => {
     const a = createEmptyStep();
     const b = createEmptyStep();
     expect(a.id).not.toBe(b.id);
+  });
+});
+
+describe("cloneStep", () => {
+  const source: BuildStep = {
+    id: "source-id",
+    age: 2,
+    villagerCount: 15,
+    villagerCountManual: true,
+    populationCount: 18,
+    resources: r({ food: 6, wood: 5, gold: 3, builder: 1 }),
+    timeSeconds: 180,
+    notes: [
+      { id: "n1", text: "scout map" },
+      { id: "n2", text: "place TC" },
+    ],
+    tags: [
+      { id: "t1", unit: "Scout", location: "enemy base" },
+      { id: "t2", unit: "Villager", location: "gold" },
+    ],
+  };
+
+  it("copies scalar fields verbatim", () => {
+    const clone = cloneStep(source);
+    expect(clone.age).toBe(source.age);
+    expect(clone.villagerCount).toBe(source.villagerCount);
+    expect(clone.villagerCountManual).toBe(source.villagerCountManual);
+    expect(clone.populationCount).toBe(source.populationCount);
+    expect(clone.timeSeconds).toBe(source.timeSeconds);
+  });
+
+  it("produces a fresh id that differs from the source", () => {
+    const clone = cloneStep(source);
+    expect(clone.id).not.toBe(source.id);
+    expect(typeof clone.id).toBe("string");
+  });
+
+  it("produces a new resources object with equal values", () => {
+    const clone = cloneStep(source);
+    expect(clone.resources).not.toBe(source.resources);
+    expect(clone.resources).toEqual(source.resources);
+  });
+
+  it("gives each note a fresh id but preserves text", () => {
+    const clone = cloneStep(source);
+    expect(clone.notes).toHaveLength(source.notes.length);
+    clone.notes.forEach((note, i) => {
+      expect(note.id).not.toBe(source.notes[i].id);
+      expect(note.text).toBe(source.notes[i].text);
+    });
+  });
+
+  it("gives each tag a fresh id but preserves unit and location", () => {
+    const clone = cloneStep(source);
+    expect(clone.tags).toHaveLength(source.tags!.length);
+    clone.tags!.forEach((tag, i) => {
+      expect(tag.id).not.toBe(source.tags![i].id);
+      expect(tag.unit).toBe(source.tags![i].unit);
+      expect(tag.location).toBe(source.tags![i].location);
+    });
+  });
+
+  it("leaves tags undefined when the source has no tags", () => {
+    const { tags: _tags, ...rest } = source;
+    const clone = cloneStep(rest);
+    expect(clone.tags).toBeUndefined();
   });
 });
 

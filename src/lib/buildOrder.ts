@@ -23,6 +23,18 @@ export const createEmptyStep = (previousStep?: BuildStep): BuildStep => ({
   notes: [],
 });
 
+export const cloneStep = (step: BuildStep): BuildStep => ({
+  ...step,
+  id: crypto.randomUUID(),
+  resources: { ...step.resources },
+  notes: step.notes.map((n) => ({ id: crypto.randomUUID(), text: n.text })),
+  tags: step.tags?.map((t) => ({
+    id: crypto.randomUUID(),
+    unit: t.unit,
+    location: t.location,
+  })),
+});
+
 export const createEmptyBuildOrder = (civId: string): BuildOrder => {
   const now = Date.now();
   return {

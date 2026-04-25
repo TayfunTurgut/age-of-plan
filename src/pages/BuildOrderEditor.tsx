@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import type { BuildOrder, BuildStep } from "@/types/buildOrder";
 import { getBuildOrder, saveBuildOrder, StorageQuotaError } from "@/lib/storage";
 import { getCiv } from "@/data/civs";
-import { computeVillagerCount, createEmptyStep } from "@/lib/buildOrder";
+import { cloneStep, computeVillagerCount, createEmptyStep } from "@/lib/buildOrder";
 import { exportAsJson, exportAsRtsOverlay } from "@/lib/exportBuildOrder";
 import { InlineText } from "@/components/editor/InlineText";
 import { StepCard } from "@/components/editor/StepCard";
@@ -143,15 +143,8 @@ const BuildOrderEditor = () => {
       if (!current) return current;
       const idx = current.steps.findIndex((s) => s.id === stepId);
       if (idx < 0) return current;
-      const original = current.steps[idx];
-      const clone: BuildStep = {
-        ...original,
-        id: crypto.randomUUID(),
-        resources: { ...original.resources },
-        notes: original.notes.map((n) => ({ id: crypto.randomUUID(), text: n.text })),
-      };
       const steps = current.steps.slice();
-      steps.splice(idx + 1, 0, clone);
+      steps.splice(idx + 1, 0, cloneStep(current.steps[idx]));
       return { ...current, steps };
     });
   }, []);
@@ -191,7 +184,7 @@ const BuildOrderEditor = () => {
 
   const insertStepAt = (idx: number) => {
     const prev = bo.steps[idx - 1];
-    const fresh = createEmptyStep(prev);
+    const fresh = prev ? cloneStep(prev) : createEmptyStep();
     const steps = bo.steps.slice();
     steps.splice(idx, 0, fresh);
     updateBo({ steps });
