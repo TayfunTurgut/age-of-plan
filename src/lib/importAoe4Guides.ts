@@ -3,6 +3,7 @@ import type { BuildOrder, BuildStep, Resources } from "@/types/buildOrder";
 import { normalizeCivId } from "./importRtsOverlay";
 import { parseTime } from "@/lib/time";
 import { computeVillagerCount } from "@/lib/buildOrder";
+import { aoe4GuidesSrcToToken } from "./aoe4GuidesIconMap";
 
 /**
  * aoe4guides.com REST API import.
@@ -69,21 +70,22 @@ const mapCiv = (raw: unknown): string => {
 };
 
 /** Extract readable plain text from aoe4guides' HTML descriptions.
- *  - Replace `<img ... title="X">` or `alt="X"` with " X ".
+ *  - `<img src=...>` whose URL maps to a known icon → `{{path.ext}}` token.
+ *  - Otherwise pull `title="X"` / `alt="X"` and inline as " X ".
  *  - Replace `<br>` with newlines.
  *  - Strip remaining tags.
  *  - Decode the handful of HTML entities aoe4guides actually emits.
- *
- *  TODO: convert recognized aoe4guides icon `<img src=...>` paths into our
- *  `{{path.ext}}` tokens here so imports preserve inline icons instead of
- *  flattening to the alt-text label. Out of scope for the initial token
- *  migration; requires mapping aoe4guides's CDN paths to our local asset
- *  paths via the icon catalog.
  */
 const htmlToText = (html: string): string => {
   if (!html) return "";
   let out = html;
-  // Pull title/alt off of <img> tags so icon meaning isn't lost.
+  // Recognized aoe4guides icon → {{path.ext}} token. Unknown srcs fall
+  // through to the title/alt extractor below.
+  out = out.replace(/<img\b[^>]*\bsrc="([^"]+)"[^>]*>/gi, (whole, src: string) => {
+    const token = aoe4GuidesSrcToToken(src);
+    return token ? ` ${token} ` : whole;
+  });
+  // Pull title/alt off any remaining <img> tags so icon meaning isn't lost.
   out = out.replace(/<img\b[^>]*\b(?:title|alt)="([^"]+)"[^>]*>/gi, " $1 ");
   // Drop any remaining <img> tags (no title/alt).
   out = out.replace(/<img\b[^>]*>/gi, "");

@@ -122,6 +122,50 @@ describe("parseAoe4GuidesPayload", () => {
     expect(bo.steps[0].notes[0].text).toBe("Build Town Center on\nthe hill");
   });
 
+  it("converts recognized aoe4guides image URLs into inline icon tokens", () => {
+    const payload = {
+      civ: "FRE",
+      steps: [
+        {
+          age: 1,
+          steps: [
+            {
+              age: 1,
+              food: 6,
+              description:
+                'Build <img src="/assets/pictures/building_economy/house.webp" title="House" /> next to <img src="/assets/pictures/unit_worker/villager.webp" title="Villager" />',
+            },
+          ],
+        },
+      ],
+    };
+    const bo = parseAoe4GuidesPayload(payload, ID);
+    expect(bo.steps[0].notes[0].text).toBe(
+      "Build {{images/buildings/house-1.png}} next to {{images/units/villager-1.png}}",
+    );
+  });
+
+  it("falls back to title/alt when an image src is from an unknown host", () => {
+    const payload = {
+      civ: "FRE",
+      steps: [
+        {
+          age: 1,
+          steps: [
+            {
+              age: 1,
+              food: 6,
+              description:
+                'Build <img src="https://example.com/icons/house.webp" title="House" /> on the hill',
+            },
+          ],
+        },
+      ],
+    };
+    const bo = parseAoe4GuidesPayload(payload, ID);
+    expect(bo.steps[0].notes[0].text).toBe("Build House on the hill");
+  });
+
   it("maps manual villager counts that disagree with the resource sum", () => {
     const payload = {
       civ: "ENG",
