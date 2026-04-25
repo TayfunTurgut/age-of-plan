@@ -37,7 +37,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const OVERLAY_FEATURES =
-  "width=420,height=520,menubar=no,toolbar=no,location=no,status=no,resizable=yes";
+  "width=380,height=420,menubar=no,toolbar=no,location=no,status=no,resizable=yes";
 
 type SaveStatus = "idle" | "saving" | "saved";
 type ActiveType = "step" | "note" | null;

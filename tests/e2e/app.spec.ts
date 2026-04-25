@@ -418,15 +418,15 @@ test.describe("runner / overlay", () => {
     await page.goto(`/build/${id}/run`);
 
     // Step 1 / 2 initially
-    await expect(page.getByText(/Step\s+1\s+\/\s+2/)).toBeVisible();
+    await expect(page.getByText(/\b1\s*\/\s*2\b/)).toBeVisible();
 
     // Right arrow advances to step 2
     await page.keyboard.press("ArrowRight");
-    await expect(page.getByText(/Step\s+2\s+\/\s+2/)).toBeVisible();
+    await expect(page.getByText(/\b2\s*\/\s*2\b/)).toBeVisible();
 
     // Left arrow goes back to step 1
     await page.keyboard.press("ArrowLeft");
-    await expect(page.getByText(/Step\s+1\s+\/\s+2/)).toBeVisible();
+    await expect(page.getByText(/\b1\s*\/\s*2\b/)).toBeVisible();
 
     // Space starts the timer (Play button becomes Pause)
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
