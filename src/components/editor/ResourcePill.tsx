@@ -9,7 +9,7 @@ const META: Record<ResourceKey, { label: string; dot: string; full: string; icon
   wood: { label: "W", dot: "bg-green-600", full: "Wood", icon: "resources/wood.png" },
   gold: { label: "G", dot: "bg-yellow-500", full: "Gold", icon: "resources/gold.png" },
   stone: { label: "S", dot: "bg-gray-400", full: "Stone", icon: "resources/stone.png" },
-  builder: { label: "B", dot: "bg-blue-500", full: "Builders" },
+  builder: { label: "B", dot: "bg-blue-500", full: "Builders", icon: "images/technologies/banco-repairs-2.png" },
   oliveOil: { label: "O", dot: "bg-purple-500", full: "Olive Oil", icon: "resources/oliveoil.png" },
   silver: { label: "Sv", dot: "bg-zinc-200", full: "Silver", icon: "resources/silver.png" },
 };
@@ -40,7 +40,7 @@ const ResourcePillImpl = ({ resource, value, onChange }: Props) => {
           aria-hidden
           loading="lazy"
           onError={() => setIconFailed(true)}
-          className="h-4 w-4 object-contain"
+          className="h-5 w-5 object-contain"
         />
       ) : (
         <span className={cn("h-2.5 w-2.5 rounded-full", meta.dot)} aria-hidden />

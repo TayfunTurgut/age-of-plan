@@ -53,7 +53,7 @@ const NoteIcon = ({ path }: { path: string }) => {
       alt=""
       loading="lazy"
       onError={() => setFailed(true)}
-      className="mx-0.5 inline h-4 w-4 align-text-bottom"
+      className="mx-0.5 inline h-5 w-5 align-text-bottom"
     />
   );
 };
