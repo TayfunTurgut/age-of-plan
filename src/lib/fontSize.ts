@@ -8,6 +8,7 @@ export type FontSize = 14 | 15 | 16 | 17 | 18 | 20;
 
 export const FONT_SIZES: readonly FontSize[] = [14, 15, 16, 17, 18, 20];
 export const FONT_SIZE_KEY = "aoe4bo:fontSize";
+export const FONT_SIZE_EVENT = "aoe4bo:fontsize-change";
 export const DEFAULT_FONT_SIZE: FontSize = 17;
 
 const isBrowser = (): boolean => typeof window !== "undefined" && !!document;
@@ -37,4 +38,8 @@ export const setFontSize = (size: FontSize): void => {
     // ignore storage errors
   }
   document.documentElement.style.fontSize = `${size}px`;
+  // Broadcast to in-window listeners. The native `storage` event only fires
+  // across other windows, so without this, sibling components using
+  // useFontSize wouldn't re-render on a same-window size change.
+  window.dispatchEvent(new CustomEvent<FontSize>(FONT_SIZE_EVENT, { detail: size }));
 };

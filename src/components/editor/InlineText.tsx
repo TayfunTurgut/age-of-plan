@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useFontSize } from "@/hooks/useFontSize";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -40,6 +41,9 @@ export const InlineText = ({
   const [editing, setEditing] = useState(autoFocus);
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  // Re-run the multiline resize when the global font size changes — line-height
+  // in pixels grows with rem, so a stale inline height would show a scrollbar.
+  const { fontSize } = useFontSize();
 
   useEffect(() => {
     if (!editing) setDraft(value);
@@ -52,17 +56,23 @@ export const InlineText = ({
     }
   }, [editing]);
 
+  // scrollHeight excludes the border, but with `box-sizing: border-box`
+  // (Tailwind default) the inline `height` includes it, so we add the border
+  // widths back — otherwise the content under-fits by ~2px and shows a scrollbar.
   const autoResize = () => {
     const el = inputRef.current;
     if (el instanceof HTMLTextAreaElement) {
       el.style.height = "auto";
-      el.style.height = `${el.scrollHeight}px`;
+      const cs = getComputedStyle(el);
+      const borderY =
+        parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+      el.style.height = `${el.scrollHeight + borderY}px`;
     }
   };
 
   useEffect(() => {
     if (editing && multiline) autoResize();
-  }, [editing, draft, multiline]);
+  }, [editing, draft, multiline, fontSize]);
 
   const commit = () => {
     if (validate && !validate(draft)) {

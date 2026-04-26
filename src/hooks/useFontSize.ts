@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  FONT_SIZE_EVENT,
   FONT_SIZE_KEY,
   FONT_SIZES,
   getFontSize,
@@ -38,6 +39,20 @@ export const useFontSize = (): {
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  // In-window sync: setFontSize dispatches FONT_SIZE_EVENT so sibling
+  // components using this hook re-render too (the storage event only fires
+  // across other windows). Don't re-apply — the dispatcher already did.
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const next = (e as CustomEvent<FontSize>).detail;
+      if ((FONT_SIZES as readonly number[]).includes(next)) {
+        setState(next);
+      }
+    };
+    window.addEventListener(FONT_SIZE_EVENT, onChange);
+    return () => window.removeEventListener(FONT_SIZE_EVENT, onChange);
   }, []);
 
   const setFontSize = useCallback((next: FontSize) => {
