@@ -394,18 +394,30 @@ const BuildOrderEditor = () => {
             value={bo.author ?? ""}
             placeholder="Author"
             onChange={(e) => updateBo({ author: e.target.value })}
+            onBlur={(e) => {
+              const trimmed = e.target.value.trim();
+              if (trimmed !== (bo.author ?? "")) updateBo({ author: trimmed });
+            }}
             className="h-9"
           />
           <Input
             value={bo.matchup ?? ""}
             placeholder="e.g. vs French"
             onChange={(e) => updateBo({ matchup: e.target.value })}
+            onBlur={(e) => {
+              const trimmed = e.target.value.trim();
+              if (trimmed !== (bo.matchup ?? "")) updateBo({ matchup: trimmed });
+            }}
             className="h-9"
           />
           <Input
             value={bo.description ?? ""}
             placeholder="Description"
             onChange={(e) => updateBo({ description: e.target.value })}
+            onBlur={(e) => {
+              const trimmed = e.target.value.trim();
+              if (trimmed !== (bo.description ?? "")) updateBo({ description: trimmed });
+            }}
             className="h-9"
           />
         </div>

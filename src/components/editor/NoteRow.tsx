@@ -115,7 +115,7 @@ export const NoteRow = ({
       // Commit and stay focused — we want the textarea to behave like a
       // multi-note row, not a multi-line paragraph editor.
       e.preventDefault();
-      onCommit(draft);
+      onCommit(draft.trim());
       textareaRef.current?.blur();
     } else if (e.key === "Escape") {
       e.preventDefault();
@@ -130,7 +130,8 @@ export const NoteRow = ({
     // Closing the picker on blur is necessary because `mousedown` on the
     // picker is preventDefault'd (textarea keeps focus), but if focus moves
     // anywhere else we should hide the panel.
-    if (draft !== note.text) onCommit(draft);
+    const trimmed = draft.trim();
+    if (trimmed !== note.text) onCommit(trimmed);
     autocomplete.close();
   };
 
