@@ -27,6 +27,10 @@ import { ResourcePill, type ResourceKey } from "./ResourcePill";
 import { NoteRow } from "./NoteRow";
 import { getAssetUrl } from "@/lib/assets";
 import { StepTags } from "./StepTags";
+import { DeltaIndicator } from "./DeltaIndicator";
+
+const deltaOf = (curr?: number, prev?: number) =>
+  curr === undefined || prev === undefined ? undefined : curr - prev;
 
 const AGE_LABELS: Record<1 | 2 | 3 | 4, { roman: string; name: string }> = {
   1: { roman: "I", name: "Dark Age" },
@@ -84,8 +88,8 @@ type Props = {
   overlay?: boolean;
   /** True when a note from another step is currently hovering this step. */
   isOverForeignNote?: boolean;
-  /** Villager count of the previous step, used for the +/- delta indicator. */
-  previousVillagerCount?: number;
+  /** Previous step in the build order, used to render +/- deltas on numeric fields. */
+  previousStep?: BuildStep;
 };
 
 const stepHasContent = (s: BuildStep): boolean => {
@@ -108,7 +112,7 @@ const StepCardImpl = ({
   onDelete,
   overlay = false,
   isOverForeignNote = false,
-  previousVillagerCount,
+  previousStep,
 }: Props) => {
   const sortable = useSortable({
     id: step.id,
@@ -218,11 +222,7 @@ const StepCardImpl = ({
           </Tooltip>
 
           {/* Vils — auto-computed from resources unless locked */}
-          <VillagerBadge
-            step={step}
-            previousVillagerCount={previousVillagerCount}
-            onUpdate={update}
-          />
+          <VillagerBadge step={step} previousStep={previousStep} onUpdate={update} />
 
           {/* Pop */}
           <div className="flex items-center gap-1">
@@ -239,6 +239,7 @@ const StepCardImpl = ({
                   populationCount: raw.trim() === "" ? undefined : parseInt(raw, 10) || 0,
                 })
               }
+              delta={deltaOf(step.populationCount, previousStep?.populationCount)}
             />
           </div>
 
@@ -250,6 +251,7 @@ const StepCardImpl = ({
               ariaLabel="Time (m:ss)"
               placeholder="—"
               onCommit={(next) => update({ timeSeconds: next })}
+              delta={deltaOf(step.timeSeconds, previousStep?.timeSeconds)}
             />
           </div>
 
@@ -281,32 +283,38 @@ const StepCardImpl = ({
             resource="food"
             value={step.resources.food}
             onChange={(n) => updateResource("food", n)}
+            delta={deltaOf(step.resources.food, previousStep?.resources.food)}
           />
           <ResourcePill
             resource="wood"
             value={step.resources.wood}
             onChange={(n) => updateResource("wood", n)}
+            delta={deltaOf(step.resources.wood, previousStep?.resources.wood)}
           />
           <ResourcePill
             resource="gold"
             value={step.resources.gold}
             onChange={(n) => updateResource("gold", n)}
+            delta={deltaOf(step.resources.gold, previousStep?.resources.gold)}
           />
           <ResourcePill
             resource="stone"
             value={step.resources.stone}
             onChange={(n) => updateResource("stone", n)}
+            delta={deltaOf(step.resources.stone, previousStep?.resources.stone)}
           />
           <ResourcePill
             resource="builder"
             value={step.resources.builder}
             onChange={(n) => updateResource("builder", n)}
+            delta={deltaOf(step.resources.builder, previousStep?.resources.builder)}
           />
           {extraResources.includes("oliveOil") && (
             <ResourcePill
               resource="oliveOil"
               value={step.resources.oliveOil ?? 0}
               onChange={(n) => updateResource("oliveOil", n)}
+              delta={deltaOf(step.resources.oliveOil, previousStep?.resources.oliveOil)}
             />
           )}
           {extraResources.includes("silver") && (
@@ -314,6 +322,7 @@ const StepCardImpl = ({
               resource="silver"
               value={step.resources.silver ?? 0}
               onChange={(n) => updateResource("silver", n)}
+              delta={deltaOf(step.resources.silver, previousStep?.resources.silver)}
             />
           )}
         </div>
@@ -400,15 +409,13 @@ const NotesStaticList = ({ notes }: { notes: Note[] }) => {
 
 type VillagerBadgeProps = {
   step: BuildStep;
-  previousVillagerCount?: number;
+  previousStep?: BuildStep;
   onUpdate: (patch: Partial<BuildStep>) => void;
 };
 
-const VillagerBadge = ({ step, previousVillagerCount, onUpdate }: VillagerBadgeProps) => {
+const VillagerBadge = ({ step, previousStep, onUpdate }: VillagerBadgeProps) => {
   const isManual = step.villagerCountManual === true;
-  const delta =
-    previousVillagerCount === undefined ? 0 : step.villagerCount - previousVillagerCount;
-  const showDelta = previousVillagerCount !== undefined && delta !== 0;
+  const delta = deltaOf(step.villagerCount, previousStep?.villagerCount);
 
   const toggleLock = () => onUpdate({ villagerCountManual: !isManual });
 
@@ -462,17 +469,7 @@ const VillagerBadge = ({ step, previousVillagerCount, onUpdate }: VillagerBadgeP
           <TooltipContent>{tooltip}</TooltipContent>
         </Tooltip>
       </div>
-      {showDelta && (
-        <span
-          className={cn(
-            "pl-2 text-[10px] font-medium tabular-nums leading-none",
-            delta > 0 ? "text-green-600 dark:text-green-500" : "text-destructive",
-          )}
-          aria-label={`Change from previous step: ${delta > 0 ? "+" : ""}${delta}`}
-        >
-          {delta > 0 ? `+${delta}` : delta}
-        </span>
-      )}
+      <DeltaIndicator value={delta} format="number" />
     </div>
   );
 };

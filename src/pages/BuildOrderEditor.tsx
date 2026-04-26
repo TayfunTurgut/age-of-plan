@@ -462,7 +462,7 @@ const BuildOrderEditor = () => {
                           step={step}
                           index={i}
                           civ={civ}
-                          previousVillagerCount={i > 0 ? bo.steps[i - 1].villagerCount : undefined}
+                          previousStep={i > 0 ? bo.steps[i - 1] : undefined}
                           onChange={setStep}
                           onDuplicate={() => duplicateStep(step.id)}
                           onDelete={() => deleteStep(step.id)}

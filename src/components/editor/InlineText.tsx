@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { useFontSize } from "@/hooks/useFontSize";
 import { cn } from "@/lib/utils";
+import { DeltaIndicator } from "@/components/editor/DeltaIndicator";
 
 type Props = {
   value: string;
@@ -18,6 +19,8 @@ type Props = {
   autoFocus?: boolean;
   ariaLabel?: string;
   style?: CSSProperties;
+  /** Step-over-step delta to render below the value. Hidden when 0/undefined. */
+  delta?: number;
 };
 
 /**
@@ -37,6 +40,7 @@ export const InlineText = ({
   autoFocus = false,
   ariaLabel,
   style,
+  delta,
 }: Props) => {
   const [editing, setEditing] = useState(autoFocus);
   const [draft, setDraft] = useState(value);
@@ -99,8 +103,8 @@ export const InlineText = ({
     }
   };
 
-  if (editing) {
-    return multiline ? (
+  const control = editing ? (
+    multiline ? (
       <textarea
         ref={(el) => (inputRef.current = el)}
         value={draft}
@@ -134,10 +138,8 @@ export const InlineText = ({
           className,
         )}
       />
-    );
-  }
-
-  return (
+    )
+  ) : (
     <button
       type="button"
       onClick={() => setEditing(true)}
@@ -152,5 +154,14 @@ export const InlineText = ({
     >
       {value || placeholder || "—"}
     </button>
+  );
+
+  if (delta === undefined) return control;
+
+  return (
+    <span className="inline-flex flex-col items-start gap-0.5">
+      {control}
+      <DeltaIndicator value={delta} format="number" />
+    </span>
   );
 };

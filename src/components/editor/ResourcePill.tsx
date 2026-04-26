@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { getAssetUrl } from "@/lib/assets";
+import { DeltaIndicator } from "@/components/editor/DeltaIndicator";
 
 export type ResourceKey = "food" | "wood" | "gold" | "stone" | "builder" | "oliveOil" | "silver";
 
@@ -18,49 +19,54 @@ type Props = {
   resource: ResourceKey;
   value: number;
   onChange: (next: number) => void;
+  /** Step-over-step delta to render below the pill. Hidden when 0/undefined. */
+  delta?: number;
 };
 
-const ResourcePillImpl = ({ resource, value, onChange }: Props) => {
+const ResourcePillImpl = ({ resource, value, onChange, delta }: Props) => {
   const meta = META[resource];
   const [iconFailed, setIconFailed] = useState(false);
   const showIcon = Boolean(meta.icon) && !iconFailed;
 
   return (
-    <label
-      title={meta.full}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/50 px-2 py-1",
-        "transition-colors focus-within:border-primary",
-      )}
-    >
-      {showIcon ? (
-        <img
-          src={getAssetUrl(meta.icon!)}
-          alt=""
-          aria-hidden
-          loading="lazy"
-          onError={() => setIconFailed(true)}
-          className="h-5 w-5 object-contain"
+    <div className="inline-flex flex-col items-start gap-0.5">
+      <label
+        title={meta.full}
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/50 px-2 py-1",
+          "transition-colors focus-within:border-primary",
+        )}
+      >
+        {showIcon ? (
+          <img
+            src={getAssetUrl(meta.icon!)}
+            alt=""
+            aria-hidden
+            loading="lazy"
+            onError={() => setIconFailed(true)}
+            className="h-5 w-5 object-contain"
+          />
+        ) : (
+          <span className={cn("h-2.5 w-2.5 rounded-full", meta.dot)} aria-hidden />
+        )}
+        <span className="text-xs font-medium text-muted-foreground">{meta.label}</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          min={0}
+          value={value}
+          onChange={(e) => {
+            const n = parseInt(e.target.value, 10);
+            onChange(Number.isNaN(n) ? 0 : Math.max(0, n));
+          }}
+          onFocus={(e) => e.currentTarget.select()}
+          aria-label={meta.full}
+          className="w-12 bg-transparent text-sm text-foreground outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
-      ) : (
-        <span className={cn("h-2.5 w-2.5 rounded-full", meta.dot)} aria-hidden />
-      )}
-      <span className="text-xs font-medium text-muted-foreground">{meta.label}</span>
-      <input
-        type="number"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        min={0}
-        value={value}
-        onChange={(e) => {
-          const n = parseInt(e.target.value, 10);
-          onChange(Number.isNaN(n) ? 0 : Math.max(0, n));
-        }}
-        onFocus={(e) => e.currentTarget.select()}
-        aria-label={meta.full}
-        className="w-12 bg-transparent text-sm text-foreground outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-      />
-    </label>
+      </label>
+      <DeltaIndicator value={delta} format="number" />
+    </div>
   );
 };
 

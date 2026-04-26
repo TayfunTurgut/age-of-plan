@@ -8,6 +8,7 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 import { formatTime } from "@/lib/time";
+import { DeltaIndicator } from "@/components/editor/DeltaIndicator";
 
 type Props = {
   value: number | undefined;
@@ -15,6 +16,8 @@ type Props = {
   ariaLabel?: string;
   placeholder?: string;
   className?: string;
+  /** Step-over-step delta in seconds. Hidden when 0/undefined. */
+  delta?: number;
 };
 
 const MAX_MINUTES = 99;
@@ -39,6 +42,7 @@ export const InlineTimer = ({
   ariaLabel,
   placeholder = "—",
   className,
+  delta,
 }: Props) => {
   const [editing, setEditing] = useState(false);
   const [mm, setMm] = useState("");
@@ -121,47 +125,41 @@ export const InlineTimer = ({
     commit();
   };
 
-  if (editing) {
-    return (
-      <div
-        ref={containerRef}
-        onBlur={onContainerBlur}
-        className={cn(
-          "inline-flex items-center rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground focus-within:ring-2 focus-within:ring-ring",
-          className,
-        )}
-      >
-        <input
-          ref={mmRef}
-          value={mm}
-          onChange={(e) => onMmChange(e.target.value)}
-          onFocus={(e) => e.target.select()}
-          onKeyDown={onKeyDown}
-          onPaste={onMmPaste}
-          inputMode="numeric"
-          maxLength={2}
-          aria-label="Minutes"
-          className="w-7 bg-transparent text-right tabular-nums outline-none"
-        />
-        <span aria-hidden className="px-0.5">:</span>
-        <input
-          ref={ssRef}
-          value={ss}
-          onChange={(e) => onSsChange(e.target.value)}
-          onFocus={(e) => e.target.select()}
-          onKeyDown={onKeyDown}
-          inputMode="numeric"
-          maxLength={2}
-          aria-label="Seconds"
-          className="w-7 bg-transparent text-left tabular-nums outline-none"
-        />
-      </div>
-    );
-  }
-
-  const display = value === undefined ? placeholder : formatTime(value);
-
-  return (
+  const control = editing ? (
+    <div
+      ref={containerRef}
+      onBlur={onContainerBlur}
+      className={cn(
+        "inline-flex items-center rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground focus-within:ring-2 focus-within:ring-ring",
+        className,
+      )}
+    >
+      <input
+        ref={mmRef}
+        value={mm}
+        onChange={(e) => onMmChange(e.target.value)}
+        onFocus={(e) => e.target.select()}
+        onKeyDown={onKeyDown}
+        onPaste={onMmPaste}
+        inputMode="numeric"
+        maxLength={2}
+        aria-label="Minutes"
+        className="w-7 bg-transparent text-right tabular-nums outline-none"
+      />
+      <span aria-hidden className="px-0.5">:</span>
+      <input
+        ref={ssRef}
+        value={ss}
+        onChange={(e) => onSsChange(e.target.value)}
+        onFocus={(e) => e.target.select()}
+        onKeyDown={onKeyDown}
+        inputMode="numeric"
+        maxLength={2}
+        aria-label="Seconds"
+        className="w-7 bg-transparent text-left tabular-nums outline-none"
+      />
+    </div>
+  ) : (
     <button
       type="button"
       onClick={enter}
@@ -172,7 +170,16 @@ export const InlineTimer = ({
         className,
       )}
     >
-      {display}
+      {value === undefined ? placeholder : formatTime(value)}
     </button>
+  );
+
+  if (delta === undefined) return control;
+
+  return (
+    <span className="inline-flex flex-col items-start gap-0.5">
+      {control}
+      <DeltaIndicator value={delta} format="time" />
+    </span>
   );
 };
