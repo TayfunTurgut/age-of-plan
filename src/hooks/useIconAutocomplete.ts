@@ -72,6 +72,20 @@ const findTriggerStart = (text: string, cursor: number): number => {
   return -1;
 };
 
+/** Find the index just past any existing token content that follows `cursor`.
+ *  Consumes valid path chars and an optional closing `}}` so a replacement can
+ *  cleanly subsume the trailing half of an existing token. */
+const findTriggerEnd = (text: string, cursor: number): number => {
+  let end = cursor;
+  while (end < text.length) {
+    const c = text[end];
+    if (c === "{" || c === "}" || /\s/.test(c)) break;
+    end++;
+  }
+  if (text[end] === "}" && text[end + 1] === "}") end += 2;
+  return end;
+};
+
 const filterIcons = (all: IconEntry[], query: string): IconEntry[] => {
   if (!query) return all;
   const q = query.toLowerCase();
@@ -226,11 +240,18 @@ export const useIconAutocomplete = ({
       const start = triggerStartRef.current;
       if (!ta || !entry || start < 0) return;
       const cursor = ta.selectionStart ?? ta.value.length;
+      const tokenEnd = findTriggerEnd(value, cursor);
       const before = value.slice(0, start);
-      const after = value.slice(cursor);
-      const insertion = `{{${entry.path}}}`;
+      const after = value.slice(tokenEnd);
+      // Auto-trail with a space so the user can keep typing — but skip it if
+      // the next character is already whitespace, and in that case advance
+      // the cursor past it so we always land after exactly one space.
+      const nextChar = after[0] ?? "";
+      const trailingSpace = /\s/.test(nextChar) ? "" : " ";
+      const insertion = `{{${entry.path}}}${trailingSpace}`;
       const next = before + insertion + after;
-      const nextCursor = before.length + insertion.length;
+      const cursorAdvance = trailingSpace === "" ? 1 : 0;
+      const nextCursor = before.length + insertion.length + cursorAdvance;
       onChange(next, nextCursor);
       // Close immediately; the controlled re-render of the textarea below
       // will reposition the cursor.
