@@ -56,9 +56,66 @@ describe("aoe4GuidesSrcToToken", () => {
     ).toBe("{{images/units/scout-1.png}}");
   });
 
-  it("returns null for unmapped basenames (e.g. UI markers like sheep, rally)", () => {
+  it("returns null for unmapped basenames without a general/ alias (e.g. sheep)", () => {
     expect(aoe4GuidesSrcToToken("/assets/pictures/resource/sheep.webp")).toBeNull();
-    expect(aoe4GuidesSrcToToken("/assets/pictures/resource/rally.webp")).toBeNull();
+    expect(aoe4GuidesSrcToToken("/assets/pictures/resource/berrybush.webp")).toBeNull();
+  });
+
+  it("maps UI-marker imgs (rally, build) to their general/ aliases", () => {
+    // aoe4guides occasionally emits these <img> tags with no title/alt, which
+    // would otherwise drop silently. We ship matching icons under general/.
+    expect(aoe4GuidesSrcToToken("/assets/pictures/resource/rally.webp")).toBe(
+      "{{general/rally.webp}}",
+    );
+    expect(aoe4GuidesSrcToToken("/assets/pictures/resource/build.webp")).toBe(
+      "{{general/build.webp}}",
+    );
+  });
+
+  it("maps the aoe4guides 'towara-1' typo to our tawara icon", () => {
+    expect(
+      aoe4GuidesSrcToToken("/assets/pictures/technology_japanese/towara-1.webp"),
+    ).toBe("{{images/technologies/tawara-1.png}}");
+  });
+
+  it("tries the alternate extension when the literal one isn't mapped", () => {
+    // aoe4guides occasionally serves the same asset as `.png` instead of
+    // `.webp`. The mapping only contains the `.webp` form, so we retry
+    // with the swapped extension.
+    expect(
+      aoe4GuidesSrcToToken("/assets/pictures/unit_worker/villager.png"),
+    ).toBe("{{images/units/villager-1.png}}");
+    expect(
+      aoe4GuidesSrcToToken("/assets/pictures/building_economy/house.png"),
+    ).toBe("{{images/buildings/house-1.png}}");
+  });
+
+  it("maps civilization-flag srcs to flags/<civ>.png", () => {
+    expect(
+      aoe4GuidesSrcToToken("/assets/pictures/civilization_flag/eng.webp"),
+    ).toBe("{{flags/english.png}}");
+    expect(
+      aoe4GuidesSrcToToken("/assets/pictures/civilization_flag/goh.webp"),
+    ).toBe("{{flags/golden-horde.png}}");
+    expect(
+      aoe4GuidesSrcToToken("/assets/pictures/civilization_flag/sen.webp"),
+    ).toBe("{{flags/sengoku-daimyo.png}}");
+  });
+
+  it("falls back to the generic villager icon for civ-suffixed villager srcs", () => {
+    // aoe4guides ships per-civ villager glyphs (villager-japanese, villager-french,
+    // …); we have a single villager icon, so all civ variants point at it.
+    expect(
+      aoe4GuidesSrcToToken("/assets/pictures/unit_worker/villager-japanese.webp"),
+    ).toBe("{{images/units/villager-1.png}}");
+    expect(
+      aoe4GuidesSrcToToken("/assets/pictures/unit_worker/villager-french.webp"),
+    ).toBe("{{images/units/villager-1.png}}");
+    expect(
+      aoe4GuidesSrcToToken(
+        "/assets/pictures/unit_worker/villager-zhu-xi.webp",
+      ),
+    ).toBe("{{images/units/villager-1.png}}");
   });
 
   it("returns null for non-aoe4guides hosts", () => {

@@ -119,7 +119,9 @@ describe("parseAoe4GuidesPayload", () => {
       ],
     };
     const bo = parseAoe4GuidesPayload(payload, ID);
-    expect(bo.steps[0].notes[0].text).toBe("Build Town Center on\nthe hill");
+    expect(bo.steps[0].notes[0].text).toBe(
+      "{{general/build.webp}} Town Center on\nthe hill",
+    );
   });
 
   it("converts recognized aoe4guides image URLs into inline icon tokens", () => {
@@ -141,7 +143,7 @@ describe("parseAoe4GuidesPayload", () => {
     };
     const bo = parseAoe4GuidesPayload(payload, ID);
     expect(bo.steps[0].notes[0].text).toBe(
-      "Build {{images/buildings/house-1.png}} next to {{images/units/villager-1.png}}",
+      "{{general/build.webp}} {{images/buildings/house-1.png}} next to {{images/units/villager-1.png}}",
     );
   });
 
@@ -163,7 +165,9 @@ describe("parseAoe4GuidesPayload", () => {
       ],
     };
     const bo = parseAoe4GuidesPayload(payload, ID);
-    expect(bo.steps[0].notes[0].text).toBe("Build House on the hill");
+    expect(bo.steps[0].notes[0].text).toBe(
+      "{{general/build.webp}} House on the hill",
+    );
   });
 
   it("maps manual villager counts that disagree with the resource sum", () => {
@@ -189,6 +193,177 @@ describe("parseAoe4GuidesPayload", () => {
     const bo = parseAoe4GuidesPayload(payload, ID);
     expect(bo.steps[0].villagerCount).toBe(10);
     expect(bo.steps[0].villagerCountManual).toBe(true);
+  });
+
+  it("converts the bare word 'build' (case-insensitive) to the build icon token", () => {
+    // aoe4guides writes "to build <img farmhouse>" with `build` as plain text.
+    // We have a general/build.webp icon — substitute it on import.
+    const payload = {
+      civ: "JAP",
+      steps: [
+        {
+          age: 1,
+          steps: [
+            {
+              age: 1,
+              food: 6,
+              description:
+                'and 1 to build <img src="/assets/pictures/building_japanese/farmhouse-1.webp" title="Farmhouse" />',
+            },
+          ],
+        },
+      ],
+    };
+    const bo = parseAoe4GuidesPayload(payload, ID);
+    expect(bo.steps[0].notes[0].text).toBe(
+      "and 1 to {{general/build.webp}} {{images/buildings/farmhouse-1.png}}",
+    );
+  });
+
+  it("only substitutes the standalone word 'build', not 'builder'/'building'/'rebuild'", () => {
+    // Word-boundary regression: nearby morphemes must stay untouched.
+    const payload = {
+      civ: "ENG",
+      steps: [
+        {
+          age: 1,
+          steps: [
+            {
+              age: 1,
+              food: 1,
+              description: "Build a builder, then a building, then rebuild it.",
+            },
+          ],
+        },
+      ],
+    };
+    const bo = parseAoe4GuidesPayload(payload, ID);
+    expect(bo.steps[0].notes[0].text).toBe(
+      "{{general/build.webp}} a builder, then a building, then rebuild it.",
+    );
+  });
+
+  it("smoke: full Japanese fast-castle step-1 description (Tawara + villager-civ + build)", () => {
+    // Real description shape from build yeDbJIwrrgHzUdJJb7gi step 1 — exercises
+    // every fix together: civ-suffixed villager, towara typo alias, and the
+    // bare-word 'build' substitution.
+    const payload = {
+      civ: "JAP",
+      steps: [
+        {
+          age: 1,
+          steps: [
+            {
+              age: 1,
+              food: 6,
+              description:
+                '5 to <img src="/assets/pictures/resource/sheep.webp" class="icon-none" title="Sheep" /> and 1 <img src="/assets/pictures/unit_worker/villager-japanese.webp" class="icon-default" /> to build <img src="/assets/pictures/building_japanese/farmhouse-1.webp" class="icon-default" title="Farmhouse" /> (get <img src="/assets/pictures/technology_japanese/towara-1.webp" class="icon-tech" />)',
+            },
+          ],
+        },
+      ],
+    };
+    const bo = parseAoe4GuidesPayload(payload, ID);
+    const text = bo.steps[0].notes[0].text;
+    expect(text).toContain("Sheep");
+    expect(text).toContain("{{images/units/villager-1.png}}");
+    expect(text).toContain("{{general/build.webp}}");
+    expect(text).toContain("{{images/buildings/farmhouse-1.png}}");
+    expect(text).toContain("{{images/technologies/tawara-1.png}}");
+  });
+
+  it("derives a capitalized text label for unmapped aoe4guides imgs without title/alt", () => {
+    // Real aoe4guides quirk: many resource/UI marker imgs (sheep, deer,
+    // berrybush, repair…) are emitted with no title/alt. We keep the
+    // information visible by capitalizing the basename.
+    const payload = {
+      civ: "ENG",
+      steps: [
+        {
+          age: 1,
+          steps: [
+            {
+              age: 1,
+              food: 1,
+              description:
+                'Pull <img src="/assets/pictures/resource/deer.webp" class="icon-none" /> and 2 to <img src="/assets/pictures/resource/berrybush.webp" class="icon-none" />',
+            },
+          ],
+        },
+      ],
+    };
+    const bo = parseAoe4GuidesPayload(payload, ID);
+    expect(bo.steps[0].notes[0].text).toBe("Pull Deer and 2 to Berrybush");
+  });
+
+  it("title/alt still wins over the basename fallback", () => {
+    const payload = {
+      civ: "ENG",
+      steps: [
+        {
+          age: 1,
+          steps: [
+            {
+              age: 1,
+              food: 1,
+              description:
+                'Pull <img src="/assets/pictures/resource/berrybush.webp" title="Berries" />',
+            },
+          ],
+        },
+      ],
+    };
+    const bo = parseAoe4GuidesPayload(payload, ID);
+    expect(bo.steps[0].notes[0].text).toBe("Pull Berries");
+  });
+
+  it("survives nullable string fields in the payload (author/title/etc.)", () => {
+    // aoe4guides emits null (not just undefined) for empty optional fields.
+    const payload = {
+      civ: "HOL",
+      author: null,
+      map: null,
+      title: null,
+      description: null,
+      steps: [
+        {
+          age: 1,
+          gameplan: null,
+          steps: [
+            {
+              age: 1,
+              food: 6,
+              builders: null,
+              description: 'Open with <img src="/assets/pictures/resource/sheep.webp" title="Sheep" />',
+            },
+          ],
+        },
+      ],
+    };
+    const bo = parseAoe4GuidesPayload(payload, ID);
+    expect(bo.civilization).toBe("house-of-lancaster");
+    expect(bo.steps[0].notes[0].text).toBe("Open with Sheep");
+  });
+
+  it("maps the live aoe4guides civ codes (KTE, DRA, GOH, SEN) and ANY to unknown", () => {
+    const make = (civ: string) =>
+      parseAoe4GuidesPayload(
+        {
+          civ,
+          steps: [{ age: 1, steps: [{ age: 1, food: 1, description: "x" }] }],
+        },
+        ID,
+      ).civilization;
+    expect(make("KTE")).toBe("knights-templar");
+    expect(make("DRA")).toBe("order-of-the-dragon");
+    expect(make("GOH")).toBe("golden-horde");
+    expect(make("SEN")).toBe("sengoku-daimyo");
+    expect(make("ANY")).toBe("unknown");
+    // Legacy 2-letter codes still work.
+    expect(make("KT")).toBe("knights-templar");
+    expect(make("OOD")).toBe("order-of-the-dragon");
+    expect(make("GH")).toBe("golden-horde");
+    expect(make("SD")).toBe("sengoku-daimyo");
   });
 
   it("auto-syncs villager count when it matches the resource sum", () => {

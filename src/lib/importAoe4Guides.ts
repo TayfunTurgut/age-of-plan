@@ -34,7 +34,11 @@ export const extractAoe4GuidesId = (input: string): string | null => {
   return ID_RE.test(trimmed) ? trimmed : null;
 };
 
-/** Map aoe4guides 3-letter civ codes to our internal ids. */
+/** Map aoe4guides civ codes to our internal ids. The codes the live
+ *  aoe4guides site emits today are listed first; the older 2-letter forms
+ *  (KT/OOD/GH/SD) are kept as legacy fallbacks so any historical export
+ *  still resolves. ANY = civ-agnostic guide → leave unknown so the user
+ *  picks one manually after import. */
 const CIV_CODE_MAP: Record<string, string> = {
   ENG: "english",
   FRE: "french",
@@ -51,13 +55,22 @@ const CIV_CODE_MAP: Record<string, string> = {
   AYY: "ayyubids",
   ZXL: "zhu-xi",
   JDA: "jeanne-darc",
+  // Order of the Dragon: live = DRA, legacy = OOD
+  DRA: "order-of-the-dragon",
   OOD: "order-of-the-dragon",
+  // Knights Templar: live = KTE, legacy = KT
+  KTE: "knights-templar",
   KT: "knights-templar",
   HOL: "house-of-lancaster",
+  // Golden Horde: live = GOH, legacy = GH
+  GOH: "golden-horde",
   GH: "golden-horde",
   MAC: "macedonian",
+  // Sengoku Daimyo: live = SEN, legacy = SD
+  SEN: "sengoku-daimyo",
   SD: "sengoku-daimyo",
   TUG: "tughluqid",
+  ANY: "unknown",
 };
 
 const mapCiv = (raw: unknown): string => {
@@ -87,12 +100,31 @@ const htmlToText = (html: string): string => {
   });
   // Pull title/alt off any remaining <img> tags so icon meaning isn't lost.
   out = out.replace(/<img\b[^>]*\b(?:title|alt)="([^"]+)"[^>]*>/gi, " $1 ");
-  // Drop any remaining <img> tags (no title/alt).
+  // For any remaining aoe4guides <img> tags (no mapping, no title/alt),
+  // derive a capitalized text label from the basename so the information
+  // isn't dropped silently. Civ-specific assets we don't ship (e.g.
+  // `tughluqabad-fort.webp`, `bhakkar.webp`) come through as readable text.
+  out = out.replace(
+    /<img\b[^>]*\bsrc="(?:https?:\/\/aoe4guides\.com)?\/assets\/pictures\/[^"]*\/([^/"]+?)\.(?:png|webp)"[^>]*>/gi,
+    (_match, basename: string) => {
+      const label = basename
+        .split(/[-_]/)
+        .filter(Boolean)
+        .map((w) => w[0].toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+      return ` ${label} `;
+    },
+  );
+  // Drop any remaining <img> tags (non-aoe4guides hosts with no title/alt).
   out = out.replace(/<img\b[^>]*>/gi, "");
   // <br>, <br/>, <br /> → newline.
   out = out.replace(/<br\s*\/?>/gi, "\n");
   // Strip any other tags.
   out = out.replace(/<\/?[a-z][^>]*>/gi, "");
+  // aoe4guides writes "to build <img farmhouse>" with `build` as plain text.
+  // We have a general/build.webp icon — substitute it. Word boundaries keep
+  // "builder", "building", "rebuild" etc. untouched.
+  out = out.replace(/\bbuild\b/gi, " {{general/build.webp}} ");
   // Decode common entities.
   out = out
     .replace(/&amp;/g, "&")
@@ -128,13 +160,17 @@ const toInt = (v: unknown): number => {
  * parsing forgiving — upstream data mixes strings and numbers, and field-level
  * normalization happens below in `toInt`, `mapStep`, etc.
  */
-const StringOrNumber = z.union([z.string(), z.number()]).optional();
+const StringOrNumber = z.union([z.string(), z.number()]).nullish();
 
+// aoe4guides freely emits `null` (not just missing) for empty optional
+// strings/numbers, so every optional here is `nullish` rather than
+// just `optional`. Without this, a single `"author": null` at top level
+// throws the whole import.
 const RawAoe4StepSchema = z
   .object({
-    age: z.number().optional(),
-    time: z.string().optional(),
-    description: z.string().optional(),
+    age: z.number().nullish(),
+    time: z.string().nullish(),
+    description: z.string().nullish(),
     food: StringOrNumber,
     wood: StringOrNumber,
     gold: StringOrNumber,
@@ -149,9 +185,9 @@ const RawAoe4StepSchema = z
 
 const RawAoe4AgeGroupSchema = z
   .object({
-    age: z.number().optional(),
-    type: z.string().optional(),
-    steps: z.array(RawAoe4StepSchema).optional(),
+    age: z.number().nullish(),
+    type: z.string().nullish(),
+    steps: z.array(RawAoe4StepSchema).nullish(),
   })
   .passthrough();
 
@@ -221,15 +257,15 @@ const flattenSteps = (groups: RawAoe4AgeGroup[]): BuildStep[] => {
 
 const RawAoe4GuidesSchema = z
   .object({
-    title: z.string().optional(),
-    name: z.string().optional(),
-    civilization: z.string().optional(),
-    civ: z.string().optional(),
-    author: z.string().optional(),
-    user: z.object({ name: z.string().optional() }).passthrough().optional(),
-    description: z.string().optional(),
-    steps: z.array(RawAoe4AgeGroupSchema).optional(),
-    build_order: z.array(RawAoe4AgeGroupSchema).optional(),
+    title: z.string().nullish(),
+    name: z.string().nullish(),
+    civilization: z.string().nullish(),
+    civ: z.string().nullish(),
+    author: z.string().nullish(),
+    user: z.object({ name: z.string().nullish() }).passthrough().nullish(),
+    description: z.string().nullish(),
+    steps: z.array(RawAoe4AgeGroupSchema).nullish(),
+    build_order: z.array(RawAoe4AgeGroupSchema).nullish(),
   })
   .passthrough();
 

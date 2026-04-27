@@ -11,6 +11,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test --grep-invert @aoe4guides-smoke",
+    "test:e2e:aoe4guides-smoke": "playwright test --grep @aoe4guides-smoke",
     "sync-data": "bun run scripts/sync-aoe4-data.ts"
   },
   "dependencies": {
