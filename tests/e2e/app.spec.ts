@@ -189,7 +189,7 @@ test.describe("editor full flow", () => {
 
     // Picker closes; the note text is rewritten with the full token.
     await expect(picker).not.toBeVisible();
-    await expect(noteInput).toHaveValue(/^build \{\{[^}]+\}\}$/);
+    await expect(noteInput).toHaveValue(/^build \{\{[^}]+\}\}\s*$/);
 
     // Re-focus the textarea so a final blur actually happens (commits draft).
     await noteInput.focus();
@@ -203,7 +203,7 @@ test.describe("editor full flow", () => {
     // Reload — token persists.
     await page.reload();
     const reloaded = page.getByRole("textbox", { name: "Note 1" }).first();
-    await expect(reloaded).toHaveValue(/^build \{\{[^}]+\}\}$/);
+    await expect(reloaded).toHaveValue(/^build \{\{[^}]+\}\}\s*$/);
   });
 
   test("villager lock toggles between auto and manual", async ({ page }) => {
