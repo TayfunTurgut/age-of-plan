@@ -40,7 +40,7 @@ const BuildStepSchema = z.object({
   age: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
   villagerCount: z.number(),
   villagerCountManual: z.boolean().optional(),
-  populationCount: z.number().optional(),
+  buildersUnknown: z.boolean().optional(),
   resources: ResourcesSchema,
   timeSeconds: z.number().optional(),
   notes: z.array(NoteSchema),

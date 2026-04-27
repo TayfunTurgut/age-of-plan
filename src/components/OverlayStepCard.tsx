@@ -60,9 +60,11 @@ const RESOURCE_META: Record<ResourceKey, { icon: string; label: string }> = {
 const CompactResourceChip = ({
   resource,
   value,
+  unknown = false,
 }: {
   resource: ResourceKey;
   value: number;
+  unknown?: boolean;
 }) => {
   const m = RESOURCE_META[resource];
   const [iconFailed, setIconFailed] = useState(false);
@@ -83,7 +85,9 @@ const CompactResourceChip = ({
             {m.label[0]}
           </span>
         )}
-        <span className="text-sm tabular-nums text-foreground">{value}</span>
+        <span className="text-sm tabular-nums text-foreground">
+          {unknown ? "?" : value}
+        </span>
       </span>
     </TouchableTooltip>
   );
@@ -168,28 +172,29 @@ const OverlayStepCard = ({
       <div className="pointer-events-none mt-1.5 flex flex-wrap gap-1">
         {RESOURCE_ORDER.map((r) => {
           const v = step.resources[r] ?? 0;
-          if (v <= 0) return null;
+          const isBuilderUnknown = r === "builder" && step.buildersUnknown === true;
+          if (v <= 0 && !isBuilderUnknown) return null;
           if (r === "oliveOil" && !extraResources.includes("oliveOil"))
             return null;
           if (r === "silver" && !extraResources.includes("silver"))
             return null;
-          return <CompactResourceChip key={r} resource={r} value={v} />;
+          return (
+            <CompactResourceChip
+              key={r}
+              resource={r}
+              value={v}
+              unknown={isBuilderUnknown}
+            />
+          );
         })}
       </div>
 
-      {(step.villagerCount > 0 || step.populationCount !== undefined) && (
+      {(step.villagerCount > 0 || step.buildersUnknown) && (
         <div className="mt-1 text-xs text-muted-foreground">
-          {step.villagerCount > 0 && (
-            <>
-              Vils: <span className="text-foreground">{step.villagerCount}</span>
-            </>
-          )}
-          {step.villagerCount > 0 && step.populationCount !== undefined && " · "}
-          {step.populationCount !== undefined && (
-            <>
-              Pop: <span className="text-foreground">{step.populationCount}</span>
-            </>
-          )}
+          Vils:{" "}
+          <span className="text-foreground">
+            {step.buildersUnknown ? "?" : step.villagerCount}
+          </span>
         </div>
       )}
 

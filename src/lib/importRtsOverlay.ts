@@ -187,8 +187,6 @@ const RawStepSchema = z
     villager_count: z.unknown(),
     villagers: z.unknown(),
     villagerCount: z.unknown(),
-    population_count: z.unknown(),
-    populationCount: z.unknown(),
     resources: z.record(z.string(), z.unknown()).optional(),
     time: z.unknown(),
     time_seconds: z.unknown(),
@@ -202,12 +200,6 @@ type RawStep = z.infer<typeof RawStepSchema>;
 
 /** Step mapper shared by both importers. */
 export const mapStep = (raw: RawStep): BuildStep => {
-  const populationRaw = raw.population_count ?? raw.populationCount;
-  const populationCount =
-    populationRaw === undefined || populationRaw === null || populationRaw === -1
-      ? undefined
-      : numOr(populationRaw, 0);
-
   let timeSeconds: number | undefined;
   if (typeof raw.time === "string") {
     const parsed = parseTime(raw.time);
@@ -233,7 +225,6 @@ export const mapStep = (raw: RawStep): BuildStep => {
     age: clampAge(raw.age),
     villagerCount,
     villagerCountManual,
-    populationCount,
     resources,
     timeSeconds,
     notes: mapNotes(raw.notes),

@@ -35,7 +35,6 @@ export const toRtsOverlayPayload = (bo: BuildOrder) => ({
   build_order: bo.steps.map((s) => ({
     age: s.age,
     villager_count: s.villagerCount,
-    population_count: s.populationCount ?? -1,
     resources: { ...s.resources },
     time: s.timeSeconds !== undefined ? formatTime(s.timeSeconds) : "",
     notes: s.notes.map((n) => toRtsTokens(n.text)),

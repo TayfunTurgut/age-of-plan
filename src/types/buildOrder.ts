@@ -35,7 +35,12 @@ export type BuildStep = {
    * sum of all resource assignments.
    */
   villagerCountManual?: boolean;
-  populationCount?: number;
+  /**
+   * When true, the editor and overlay render `?` for both this step's
+   * builders count and total villagers count. The underlying numbers in
+   * `resources.builder` and `villagerCount` are preserved across toggles.
+   */
+  buildersUnknown?: boolean;
   resources: Resources;
   /** Canonical seconds from the start of the game. */
   timeSeconds?: number;

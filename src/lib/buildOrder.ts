@@ -17,7 +17,7 @@ export const createEmptyStep = (previousStep?: BuildStep): BuildStep => ({
   age: previousStep?.age ?? 1,
   villagerCount: previousStep?.villagerCount ?? 0,
   villagerCountManual: false,
-  populationCount: undefined,
+  buildersUnknown: previousStep?.buildersUnknown,
   resources: emptyResources(),
   timeSeconds: undefined,
   notes: [],

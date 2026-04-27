@@ -35,7 +35,6 @@ const sampleBuildOrder = (): BuildOrder => ({
       age: 2,
       villagerCount: 25,
       villagerCountManual: true,
-      populationCount: 24,
       resources: { food: 12, wood: 6, gold: 2, stone: 0, builder: 0 },
       timeSeconds: 725,
       notes: [],
@@ -60,10 +59,6 @@ describe("toRtsOverlayPayload", () => {
       "Scout map",
       "Send first vil to sheep",
     ]);
-  });
-
-  it("signals missing populationCount with -1 (RTS_Overlay convention)", () => {
-    expect(toRtsOverlayPayload(sampleBuildOrder()).build_order[0].population_count).toBe(-1);
   });
 });
 

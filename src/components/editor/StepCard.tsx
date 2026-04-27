@@ -224,25 +224,6 @@ const StepCardImpl = ({
           {/* Vils — auto-computed from resources unless locked */}
           <VillagerBadge step={step} previousStep={previousStep} onUpdate={update} />
 
-          {/* Pop */}
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground">Pop</span>
-            <InlineText
-              value={step.populationCount === undefined ? "" : String(step.populationCount)}
-              inputType="number"
-              ariaLabel="Population count"
-              placeholder="—"
-              className="w-14"
-              validate={(raw) => raw.trim() === "" || /^\d+$/.test(raw.trim())}
-              onCommit={(raw) =>
-                update({
-                  populationCount: raw.trim() === "" ? undefined : parseInt(raw, 10) || 0,
-                })
-              }
-              delta={deltaOf(step.populationCount, previousStep?.populationCount)}
-            />
-          </div>
-
           {/* Time */}
           <div className="flex items-center gap-1">
             <span className="text-xs text-muted-foreground">Time</span>
@@ -307,7 +288,13 @@ const StepCardImpl = ({
             resource="builder"
             value={step.resources.builder}
             onChange={(n) => updateResource("builder", n)}
-            delta={deltaOf(step.resources.builder, previousStep?.resources.builder)}
+            delta={
+              step.buildersUnknown || previousStep?.buildersUnknown
+                ? undefined
+                : deltaOf(step.resources.builder, previousStep?.resources.builder)
+            }
+            unknown={step.buildersUnknown}
+            onUnknownToggle={(next) => update({ buildersUnknown: next })}
           />
           {extraResources.includes("oliveOil") && (
             <ResourcePill
@@ -415,7 +402,11 @@ type VillagerBadgeProps = {
 
 const VillagerBadge = ({ step, previousStep, onUpdate }: VillagerBadgeProps) => {
   const isManual = step.villagerCountManual === true;
-  const delta = deltaOf(step.villagerCount, previousStep?.villagerCount);
+  const isUnknown = step.buildersUnknown === true;
+  const delta =
+    isUnknown || previousStep?.buildersUnknown
+      ? undefined
+      : deltaOf(step.villagerCount, previousStep?.villagerCount);
 
   const toggleLock = () => onUpdate({ villagerCountManual: !isManual });
 
@@ -429,11 +420,18 @@ const VillagerBadge = ({ step, previousStep, onUpdate }: VillagerBadgeProps) => 
         <span
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-1",
-            isManual && "border-primary/50 bg-primary/10",
+            isManual && !isUnknown && "border-primary/50 bg-primary/10",
           )}
         >
           <Users className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-          {isManual ? (
+          {isUnknown ? (
+            <span
+              className="min-w-[1.5rem] text-center text-sm font-medium tabular-nums text-foreground"
+              aria-label="Villager count (unknown)"
+            >
+              ?
+            </span>
+          ) : isManual ? (
             <InlineText
               value={String(step.villagerCount)}
               inputType="number"
@@ -451,23 +449,25 @@ const VillagerBadge = ({ step, previousStep, onUpdate }: VillagerBadgeProps) => 
             </span>
           )}
         </span>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={toggleLock}
-              aria-label={isManual ? "Unlock to auto-calculate villagers" : "Lock villager count"}
-              aria-pressed={isManual}
-              className={cn(
-                "focus-ring rounded-md p-1 transition-colors hover:bg-muted/50",
-                isManual ? "text-primary" : "text-muted-foreground/70 hover:text-foreground",
-              )}
-            >
-              {isManual ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>{tooltip}</TooltipContent>
-        </Tooltip>
+        {!isUnknown && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={toggleLock}
+                aria-label={isManual ? "Unlock to auto-calculate villagers" : "Lock villager count"}
+                aria-pressed={isManual}
+                className={cn(
+                  "focus-ring rounded-md p-1 transition-colors hover:bg-muted/50",
+                  isManual ? "text-primary" : "text-muted-foreground/70 hover:text-foreground",
+                )}
+              >
+                {isManual ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{tooltip}</TooltipContent>
+          </Tooltip>
+        )}
       </div>
       <DeltaIndicator value={delta} format="number" />
     </div>

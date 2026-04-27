@@ -78,7 +78,6 @@ describe("cloneStep", () => {
     age: 2,
     villagerCount: 15,
     villagerCountManual: true,
-    populationCount: 18,
     resources: r({ food: 6, wood: 5, gold: 3, builder: 1 }),
     timeSeconds: 180,
     notes: [
@@ -96,7 +95,6 @@ describe("cloneStep", () => {
     expect(clone.age).toBe(source.age);
     expect(clone.villagerCount).toBe(source.villagerCount);
     expect(clone.villagerCountManual).toBe(source.villagerCountManual);
-    expect(clone.populationCount).toBe(source.populationCount);
     expect(clone.timeSeconds).toBe(source.timeSeconds);
   });
 
