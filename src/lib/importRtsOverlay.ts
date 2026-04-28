@@ -2,6 +2,11 @@ import { z } from "zod";
 import type { BuildOrder, BuildStep } from "@/types/buildOrder";
 import { parseTime } from "@/lib/time";
 import { computeVillagerCount } from "@/lib/buildOrder";
+import {
+  aoe4GuidesAtTokenPathToToken,
+  capitalizeAoe4GuidesBasename,
+  substituteAoe4GuidesBuildKeyword,
+} from "./aoe4GuidesIconMap";
 
 /**
  * RTS_Overlay JSON import + canonical civ name round-trip support.
@@ -140,10 +145,38 @@ const positiveOrUndefined = (v: unknown): number | undefined => {
 
 type RawNote = string | { text?: string; note?: string };
 
-/** RTS_Overlay icon token syntax `@path.ext@` → our internal `{{path.ext}}`. */
+/** Top-level dirs we ship under `public/aoe4/`. Used to detect tokens that
+ *  are already in our canonical namespace and should round-trip verbatim
+ *  (i.e. our own exports re-imported back). */
+const INTERNAL_TOKEN_PREFIX = /^(?:images|general|flags|resources|ages)\//;
+
+/**
+ * `@path.ext@` icon token converter, shared by RTS_Overlay and aoe4guides
+ * clipboard / `.bo` JSON imports. Branches by token shape:
+ *   - Bare basename (RTS_Overlay's historical form like `villager.webp`)
+ *     → wrap verbatim.
+ *   - Path already in our internal namespace (`images/...`, `general/...`,
+ *     `flags/...`, `resources/...`, `ages/...`) → wrap verbatim. Lets our
+ *     own RTS_Overlay-shaped exports round-trip without canonicalization.
+ *   - Other path with `/` (aoe4guides clipboard form like
+ *     `unit_worker/villager-japanese.webp`, or legacy aoe4world form like
+ *     `unit-french/royal-knight-2.webp`) → translate through the
+ *     aoe4guides icon mapper. On a hit, emit our internal `{{...}}` token;
+ *     on a miss (e.g. `resource/sheep.webp` — we don't ship that asset),
+ *     fall back to a capitalized text label so the meaning isn't lost.
+ *     Mirrors the URL importer's `htmlToText` fallback chain.
+ *   - Tokens with whitespace inside (`@bad path.png@`) don't match the
+ *     regex and pass through unchanged.
+ */
 const convertIconTokens = (text: string): string =>
   text.includes("@")
-    ? text.replace(/@([^@\s]+\.(?:png|webp))@/g, "{{$1}}")
+    ? text.replace(/@([^@\s]+\.(?:png|webp))@/g, (_whole, path: string) => {
+        if (!path.includes("/") || INTERNAL_TOKEN_PREFIX.test(path)) {
+          return `{{${path}}}`;
+        }
+        const mapped = aoe4GuidesAtTokenPathToToken(path);
+        return mapped ?? capitalizeAoe4GuidesBasename(path);
+      })
     : text;
 
 const mapNotes = (raw: unknown): { id: string; text: string }[] => {
@@ -272,17 +305,35 @@ export const parseRtsOverlayJson = (json: string): BuildOrder => {
   }
   const parsed = result.data;
 
+  // aoe4guides clipboard / `.bo` JSON shares this schema but ships a few
+  // text-format quirks RTS_Overlay proper doesn't. Detect via source URL
+  // and apply the same post-processing the URL importer does in
+  // `htmlToText`. Specifically: aoe4guides writes the bare word "build"
+  // expecting it to render as their build-marker icon (rally is always
+  // emitted as an `<img>`/`@…@` token, but build often isn't).
+  const sourceStr = parsed.source ? String(parsed.source) : "";
+  const isAoe4Guides = sourceStr.includes("aoe4guides.com");
+
   const now = Date.now();
+  const steps = parsed.build_order.map(mapStep);
+  if (isAoe4Guides) {
+    for (const step of steps) {
+      for (const note of step.notes) {
+        note.text = substituteAoe4GuidesBuildKeyword(note.text);
+      }
+    }
+  }
+
   return {
     id: crypto.randomUUID(),
     name: String(parsed.name ?? parsed.title ?? "Imported build"),
     civilization: normalizeCivId(String(parsed.civilization ?? parsed.civ ?? "")),
     author: parsed.author ? String(parsed.author) : "",
-    source: parsed.source ? String(parsed.source) : "",
+    source: sourceStr,
     description: parsed.description ? String(parsed.description) : "",
     matchup: parsed.matchup ? String(parsed.matchup) : "",
     createdAt: now,
     updatedAt: now,
-    steps: parsed.build_order.map(mapStep),
+    steps,
   };
 };

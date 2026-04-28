@@ -143,6 +143,11 @@ describe("parseRtsOverlayJson", () => {
   });
 
   it("converts RTS_Overlay @...@ icon tokens to internal {{...}} on import", () => {
+    // Path-style tokens with a slash get translated through the aoe4guides
+    // icon mapper (it understands legacy aoe4world paths like
+    // `unit-english/longbowman-2.webp` via PATH_MIGRATION). Bare basenames
+    // stay verbatim-wrapped (RTS_Overlay's historical format). Tokens with
+    // whitespace inside don't match the regex and pass through untouched.
     const json = JSON.stringify({
       civilization: "English",
       build_order: [
@@ -152,15 +157,105 @@ describe("parseRtsOverlayJson", () => {
             "build @unit-english/longbowman-2.webp@",
             "no token here",
             "@bad path.png@ stays put",
+            "bare @longbowman-2.webp@",
           ],
         },
       ],
     });
     const bo = parseRtsOverlayJson(json);
     expect(bo.steps[0].notes.map((n) => n.text)).toEqual([
-      "build {{unit-english/longbowman-2.webp}}",
+      "build {{images/units/longbowman-2.png}}",
       "no token here",
       "@bad path.png@ stays put",
+      "bare {{longbowman-2.webp}}",
+    ]);
+  });
+
+  it("translates aoe4guides clipboard path-style tokens with slash through the icon map", () => {
+    // aoe4guides' "Copy as JSON" / .bo download emits paths like
+    // `@unit_worker/villager-japanese.webp@`. Underscored paths, civ-suffixed
+    // villagers, the towara typo, and the rally UI marker all go through
+    // aoe4GuidesSrcToToken's full alias chain. (The bare-word `build`
+    // substitution is covered by its own test below.)
+    const json = JSON.stringify({
+      civilization: "Japanese",
+      source: "https://aoe4guides.com/builds/yWFJNLAsfTKGCKfC1awK",
+      build_order: [
+        {
+          age: 1,
+          notes: [
+            "1 @unit_worker/villager-japanese.webp@ next to @building_japanese/farmhouse-1.webp@",
+            "Queue @technology_japanese/towara-1.webp@",
+            "@resource/rally.webp@ new villager",
+          ],
+        },
+      ],
+    });
+    const bo = parseRtsOverlayJson(json);
+    expect(bo.steps[0].notes.map((n) => n.text)).toEqual([
+      "1 {{images/units/villager-1.png}} next to {{images/buildings/farmhouse-1.png}}",
+      "Queue {{images/technologies/tawara-1.png}}",
+      "{{general/rally.webp}} new villager",
+    ]);
+  });
+
+  it("substitutes the bare word 'build' for aoe4guides clipboard JSON only", () => {
+    // aoe4guides writes "to build farmhouse" expecting a build-marker
+    // icon. The URL importer's htmlToText already does this; the JSON
+    // path now matches by detecting the aoe4guides.com source URL.
+    // Plain RTS_Overlay JSON without an aoe4guides source must keep
+    // 'build' as text (could be sentence content), and word-boundaries
+    // protect 'builder' / 'building' / 'rebuild' in either case.
+    const aoe4Json = JSON.stringify({
+      civilization: "Japanese",
+      source: "https://aoe4guides.com/builds/abc",
+      build_order: [
+        {
+          age: 1,
+          notes: ["1 villager to build farmhouse, builder still gathering"],
+        },
+      ],
+    });
+    expect(parseRtsOverlayJson(aoe4Json).steps[0].notes[0].text).toBe(
+      "1 villager to {{general/build.webp}} farmhouse, builder still gathering",
+    );
+
+    const rtsJson = JSON.stringify({
+      civilization: "English",
+      build_order: [
+        {
+          age: 1,
+          notes: ["queue a longbowman, then build a barracks"],
+        },
+      ],
+    });
+    expect(parseRtsOverlayJson(rtsJson).steps[0].notes[0].text).toBe(
+      "queue a longbowman, then build a barracks",
+    );
+  });
+
+  it("falls back to a capitalized text label when an aoe4guides path is unmapped", () => {
+    // aoe4guides ships per-civ resource glyphs (sheep, berrybush, deer…) we
+    // intentionally don't carry. The clipboard importer must keep the
+    // information visible, matching the URL importer's basename-text
+    // fallback in htmlToText.
+    const json = JSON.stringify({
+      civilization: "English",
+      source: "https://aoe4guides.com/builds/abc",
+      build_order: [
+        {
+          age: 1,
+          notes: [
+            "Pull @resource/deer.webp@ and gather @resource/berrybush.webp@",
+            "5 to @resource/sheep.webp@",
+          ],
+        },
+      ],
+    });
+    const bo = parseRtsOverlayJson(json);
+    expect(bo.steps[0].notes.map((n) => n.text)).toEqual([
+      "Pull Deer and gather Berrybush",
+      "5 to Sheep",
     ]);
   });
 });

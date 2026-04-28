@@ -99,3 +99,55 @@ export const aoe4GuidesSrcToToken = (src: string | undefined | null): string | n
 
   return null;
 };
+
+/**
+ * Convert the `@<category>/<file>.ext@` icon syntax used by aoe4guides'
+ * "Copy as JSON" / `.bo` exports into our internal `{{path.ext}}` token,
+ * or `null` if the path doesn't resolve. Thin wrapper over
+ * `aoe4GuidesSrcToToken` that prepends the `/assets/pictures/` prefix the
+ * clipboard format omits.
+ */
+export const aoe4GuidesAtTokenPathToToken = (
+  path: string | undefined | null,
+): string | null => {
+  if (!path || typeof path !== "string") return null;
+  return aoe4GuidesSrcToToken(`/assets/pictures/${path}`);
+};
+
+/**
+ * Substitute the bare word `build` with our `{{general/build.webp}}`
+ * marker — aoe4guides' notes use `build` as an icon-keyword (rally is
+ * always emitted as an `<img>`/`@…@` token, but build often isn't).
+ * Word boundaries protect `builder`, `building`, `rebuild`, etc.
+ *
+ * The alternation also matches `{{…}}` tokens already inserted by the
+ * `<img>` / `@…@` converters and passes them through unchanged. Without
+ * that, a token like `{{general/build.webp}}` would get its inner
+ * `build` re-substituted into `{{general/{{general/build.webp}}.webp}}`.
+ *
+ * Shared by both importers (URL `htmlToText` and JSON
+ * `parseRtsOverlayJson`'s aoe4guides branch) so they agree.
+ */
+export const substituteAoe4GuidesBuildKeyword = (text: string): string =>
+  text.replace(
+    /(\{\{[^{}]*\}\})|\bbuild\b/gi,
+    (_whole, token: string | undefined) => token ?? "{{general/build.webp}}",
+  );
+
+/**
+ * Capitalized text fallback used when an aoe4guides asset has no mapping.
+ * Accepts either a bare basename (`sheep`, `sheep.webp`) or a full
+ * relative path (`resource/sheep.webp`). Strips any trailing `.webp`/`.png`,
+ * keeps only the last path segment, splits on `-` / `_`, title-cases each
+ * word: `unit_worker/villager-japanese.webp` → `"Villager Japanese"`.
+ */
+export const capitalizeAoe4GuidesBasename = (pathOrBasename: string): string => {
+  if (!pathOrBasename) return "";
+  const file = pathOrBasename.split("/").pop() ?? pathOrBasename;
+  const stem = file.replace(/\.(?:png|webp)$/i, "");
+  return stem
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+};

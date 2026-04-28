@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { aoe4GuidesSrcToToken } from "./aoe4GuidesIconMap";
+import {
+  aoe4GuidesSrcToToken,
+  aoe4GuidesAtTokenPathToToken,
+  capitalizeAoe4GuidesBasename,
+  substituteAoe4GuidesBuildKeyword,
+} from "./aoe4GuidesIconMap";
 
 describe("aoe4GuidesSrcToToken", () => {
   it("maps a relative aoe4guides building src to its internal token", () => {
@@ -133,5 +138,122 @@ describe("aoe4GuidesSrcToToken", () => {
     expect(aoe4GuidesSrcToToken("")).toBeNull();
     expect(aoe4GuidesSrcToToken(undefined as unknown as string)).toBeNull();
     expect(aoe4GuidesSrcToToken(null as unknown as string)).toBeNull();
+  });
+});
+
+describe("aoe4GuidesAtTokenPathToToken", () => {
+  // The clipboard / .bo export uses `@<category>/<file>.ext@` syntax. The
+  // path inside the @-delimiters is the bare relative path under
+  // `/assets/pictures/`. This helper prepends that prefix and reuses the
+  // existing src-to-token mapper so all aliases / fallbacks apply.
+  it("maps a known unit path", () => {
+    expect(
+      aoe4GuidesAtTokenPathToToken("unit_worker/villager-japanese.webp"),
+    ).toBe("{{images/units/villager-1.png}}");
+  });
+
+  it("maps a known building path", () => {
+    expect(
+      aoe4GuidesAtTokenPathToToken("building_japanese/farmhouse-1.webp"),
+    ).toBe("{{images/buildings/farmhouse-1.png}}");
+  });
+
+  it("maps the towara typo via AOE4GUIDES_ALIASES", () => {
+    expect(
+      aoe4GuidesAtTokenPathToToken("technology_japanese/towara-1.webp"),
+    ).toBe("{{images/technologies/tawara-1.png}}");
+  });
+
+  it("maps UI-marker resource imgs (rally / build) via AOE4GUIDES_ALIASES", () => {
+    expect(aoe4GuidesAtTokenPathToToken("resource/rally.webp")).toBe(
+      "{{general/rally.webp}}",
+    );
+    expect(aoe4GuidesAtTokenPathToToken("resource/build.webp")).toBe(
+      "{{general/build.webp}}",
+    );
+  });
+
+  it("returns null for unmapped paths (caller falls back to text)", () => {
+    expect(aoe4GuidesAtTokenPathToToken("resource/sheep.webp")).toBeNull();
+    expect(aoe4GuidesAtTokenPathToToken("resource/berrybush.webp")).toBeNull();
+  });
+
+  it("returns null for empty / non-string input", () => {
+    expect(aoe4GuidesAtTokenPathToToken("")).toBeNull();
+    expect(
+      aoe4GuidesAtTokenPathToToken(undefined as unknown as string),
+    ).toBeNull();
+  });
+});
+
+describe("capitalizeAoe4GuidesBasename", () => {
+  // Shared text fallback used by both the URL importer (htmlToText) and the
+  // clipboard importer (convertIconTokens). Strips path/extension, splits on
+  // - and _, title-cases each word.
+  it("title-cases a bare basename", () => {
+    expect(capitalizeAoe4GuidesBasename("sheep")).toBe("Sheep");
+    expect(capitalizeAoe4GuidesBasename("berrybush")).toBe("Berrybush");
+  });
+
+  it("strips a .webp/.png extension", () => {
+    expect(capitalizeAoe4GuidesBasename("sheep.webp")).toBe("Sheep");
+    expect(capitalizeAoe4GuidesBasename("sheep.png")).toBe("Sheep");
+  });
+
+  it("extracts the basename from a relative path", () => {
+    expect(capitalizeAoe4GuidesBasename("resource/sheep.webp")).toBe("Sheep");
+    expect(
+      capitalizeAoe4GuidesBasename("unit_worker/villager-japanese.webp"),
+    ).toBe("Villager Japanese");
+  });
+
+  it("splits on '-' and '_' and title-cases each word", () => {
+    expect(capitalizeAoe4GuidesBasename("villager-japanese")).toBe(
+      "Villager Japanese",
+    );
+    expect(capitalizeAoe4GuidesBasename("FOO_BAR-BAZ")).toBe("Foo Bar Baz");
+  });
+
+  it("returns an empty string for empty input", () => {
+    expect(capitalizeAoe4GuidesBasename("")).toBe("");
+  });
+});
+
+describe("substituteAoe4GuidesBuildKeyword", () => {
+  it("substitutes the bare word 'build' with the build-marker token", () => {
+    expect(substituteAoe4GuidesBuildKeyword("to build farmhouse")).toBe(
+      "to {{general/build.webp}} farmhouse",
+    );
+  });
+
+  it("is case-insensitive and idempotent", () => {
+    expect(substituteAoe4GuidesBuildKeyword("Build a house")).toBe(
+      "{{general/build.webp}} a house",
+    );
+    // Running it again yields the same string — the inserted token is
+    // protected from re-substitution.
+    expect(
+      substituteAoe4GuidesBuildKeyword(
+        substituteAoe4GuidesBuildKeyword("Build a house"),
+      ),
+    ).toBe("{{general/build.webp}} a house");
+  });
+
+  it("respects word boundaries (builder / building / rebuild stay)", () => {
+    expect(
+      substituteAoe4GuidesBuildKeyword("the builder is building, rebuild it"),
+    ).toBe("the builder is building, rebuild it");
+  });
+
+  it("does not corrupt {{...}} tokens that contain 'build' in the path", () => {
+    // Realistic case after convertIconTokens / aoe4GuidesSrcToToken has
+    // already turned `resource/build.webp` into a token. The keyword
+    // substitution must NOT re-match `build` inside that token.
+    expect(substituteAoe4GuidesBuildKeyword("{{general/build.webp}}")).toBe(
+      "{{general/build.webp}}",
+    );
+    expect(
+      substituteAoe4GuidesBuildKeyword("Build {{general/build.webp}} now"),
+    ).toBe("{{general/build.webp}} {{general/build.webp}} now");
   });
 });

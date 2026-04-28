@@ -109,7 +109,38 @@ describe("exportBuildOrder round-trip via RTS_Overlay import", () => {
   });
 
   it("icon tokens round-trip {{...}} → @...@ → {{...}}", () => {
+    // Canonical (post-import) tokens use our internal namespace
+    // (images/, general/, flags/, resources/, ages/) and round-trip
+    // exactly through the RTS_Overlay-shape export.
     const original: BuildOrder = {
+      ...sampleBuildOrder(),
+      steps: [
+        {
+          ...sampleBuildOrder().steps[0],
+          notes: [
+            {
+              id: "n1",
+              text: "build {{images/units/royal-knight-2.png}} fast",
+            },
+          ],
+        },
+      ],
+    };
+    const reimported = parseRtsOverlayJson(
+      JSON.stringify(toRtsOverlayPayload(original)),
+    );
+    expect(reimported.steps[0].notes[0].text).toBe(
+      "build {{images/units/royal-knight-2.png}} fast",
+    );
+  });
+
+  it("legacy aoe4world-style tokens are canonicalized on re-import", () => {
+    // Builds saved before the icon-token canonicalization could carry
+    // legacy paths like `unit-french/royal-knight-2.webp`. The renderer
+    // can't resolve those, so on the next export-and-reimport the
+    // RTS_Overlay converter promotes them to the canonical form. This is
+    // a beneficial migration: the resulting token actually renders.
+    const legacy: BuildOrder = {
       ...sampleBuildOrder(),
       steps: [
         {
@@ -124,10 +155,10 @@ describe("exportBuildOrder round-trip via RTS_Overlay import", () => {
       ],
     };
     const reimported = parseRtsOverlayJson(
-      JSON.stringify(toRtsOverlayPayload(original)),
+      JSON.stringify(toRtsOverlayPayload(legacy)),
     );
     expect(reimported.steps[0].notes[0].text).toBe(
-      "build {{unit-french/royal-knight-2.webp}} fast",
+      "build {{images/units/royal-knight-2.png}} fast",
     );
   });
 

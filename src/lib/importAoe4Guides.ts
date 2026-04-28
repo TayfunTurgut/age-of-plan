@@ -3,7 +3,11 @@ import type { BuildOrder, BuildStep, Resources } from "@/types/buildOrder";
 import { normalizeCivId } from "./importRtsOverlay";
 import { parseTime } from "@/lib/time";
 import { computeVillagerCount } from "@/lib/buildOrder";
-import { aoe4GuidesSrcToToken } from "./aoe4GuidesIconMap";
+import {
+  aoe4GuidesSrcToToken,
+  capitalizeAoe4GuidesBasename,
+  substituteAoe4GuidesBuildKeyword,
+} from "./aoe4GuidesIconMap";
 
 /**
  * aoe4guides.com REST API import.
@@ -104,16 +108,11 @@ const htmlToText = (html: string): string => {
   // derive a capitalized text label from the basename so the information
   // isn't dropped silently. Civ-specific assets we don't ship (e.g.
   // `tughluqabad-fort.webp`, `bhakkar.webp`) come through as readable text.
+  // Shared with the clipboard / `.bo` JSON path's text fallback so both
+  // importers agree on what unmapped icons look like as plain text.
   out = out.replace(
     /<img\b[^>]*\bsrc="(?:https?:\/\/aoe4guides\.com)?\/assets\/pictures\/[^"]*\/([^/"]+?)\.(?:png|webp)"[^>]*>/gi,
-    (_match, basename: string) => {
-      const label = basename
-        .split(/[-_]/)
-        .filter(Boolean)
-        .map((w) => w[0].toUpperCase() + w.slice(1).toLowerCase())
-        .join(" ");
-      return ` ${label} `;
-    },
+    (_match, basename: string) => ` ${capitalizeAoe4GuidesBasename(basename)} `,
   );
   // Drop any remaining <img> tags (non-aoe4guides hosts with no title/alt).
   out = out.replace(/<img\b[^>]*>/gi, "");
@@ -122,9 +121,9 @@ const htmlToText = (html: string): string => {
   // Strip any other tags.
   out = out.replace(/<\/?[a-z][^>]*>/gi, "");
   // aoe4guides writes "to build <img farmhouse>" with `build` as plain text.
-  // We have a general/build.webp icon — substitute it. Word boundaries keep
-  // "builder", "building", "rebuild" etc. untouched.
-  out = out.replace(/\bbuild\b/gi, " {{general/build.webp}} ");
+  // The shared helper replaces it but skips `build` inside `{{…}}` tokens
+  // already inserted above, so the substitution is idempotent on icons.
+  out = substituteAoe4GuidesBuildKeyword(out);
   // Decode common entities.
   out = out
     .replace(/&amp;/g, "&")

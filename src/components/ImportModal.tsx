@@ -238,11 +238,11 @@ export const ImportModal = ({ open, onOpenChange, presetCivId }: Props) => {
               )}
             >
               <Download className="h-4 w-4" />
-              <span>Tap to browse or drop a .json file</span>
+              <span>Tap to browse or drop a .json or .bo file</span>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".json,application/json"
+                accept=".json,.bo,application/json"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];

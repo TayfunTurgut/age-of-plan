@@ -1,4 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const FIXTURE_JSON = resolve(HERE, "../fixtures/aoe4guides/sengoku-daimyo-racecar.json");
+const FIXTURE_BO = resolve(HERE, "../fixtures/aoe4guides/sengoku-daimyo-racecar.bo");
 
 /**
  * Optional smoke suite for the aoe4guides.com URL importer.
@@ -79,17 +86,48 @@ const cases: SmokeCase[] = [
   { name: "Tughluqid — Unlimited Elephant", url: "https://aoe4guides.com/builds/0gvNQ9UtKN6kIbs9O85Y", expectedCiv: "Tughluqid Dynasty" },
 ];
 
-const importFromUrl = async (page: Page, url: string) => {
+const openImportDialog = async (page: Page) => {
   await page.getByRole("button", { name: "or import a build" }).click();
-  // aoe4guides tab is the default; the input has this placeholder.
-  const input = page.getByPlaceholder("Paste aoe4guides.com URL or build ID");
-  await input.fill(url);
+};
+
+const submitImport = async (page: Page) => {
   await page
     .locator('[role="dialog"]')
     .getByRole("button", { name: "Import" })
     .click();
   // Successful import navigates straight to the editor.
   await expect(page).toHaveURL(/\/build\/.+\/edit$/, { timeout: 15_000 });
+};
+
+const importFromUrl = async (page: Page, url: string) => {
+  await openImportDialog(page);
+  // aoe4guides tab is the default; the input has this placeholder.
+  await page
+    .getByPlaceholder("Paste aoe4guides.com URL or build ID")
+    .fill(url);
+  await submitImport(page);
+};
+
+const switchToJsonTab = async (page: Page) => {
+  await page.locator('[role="dialog"]').getByRole("tab", { name: "From JSON" }).click();
+};
+
+const importFromPaste = async (page: Page, jsonText: string) => {
+  await openImportDialog(page);
+  await switchToJsonTab(page);
+  await page
+    .getByPlaceholder("Paste RTS_Overlay or exported JSON here")
+    .fill(jsonText);
+  await submitImport(page);
+};
+
+const importFromUpload = async (page: Page, filePath: string) => {
+  await openImportDialog(page);
+  await switchToJsonTab(page);
+  // The picker is a hidden <input type="file"> — drive it directly via
+  // setInputFiles so we don't have to open a system file dialog.
+  await page.locator('[role="dialog"] input[type="file"]').setInputFiles(filePath);
+  await submitImport(page);
 };
 
 test.describe("@aoe4guides-smoke", () => {
@@ -140,4 +178,86 @@ test.describe("@aoe4guides-smoke", () => {
       ).toEqual([]);
     });
   }
+});
+
+/**
+ * aoe4guides exposes three import paths for the same build (URL/API,
+ * "Copy as JSON" clipboard, ".bo" download). The download is byte-identical
+ * to the clipboard JSON, but they exercise different UX paths and a
+ * different icon-token syntax (`@<path>@`) than the URL/API HTML descriptions.
+ *
+ * This block re-imports one curated build (Sengoku Daimyo Racecar) via all
+ * three modalities and asserts that each yields the same civ + the same
+ * concrete icon tokens — including the very ones the user originally
+ * reported as broken on the JSON / .bo paths (Tawara, civ-suffixed villager,
+ * the "build" UI marker, farmhouse).
+ */
+test.describe("@aoe4guides-smoke Racecar three-modality import", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+  });
+
+  const RACECAR_URL = "https://aoe4guides.com/builds/yWFJNLAsfTKGCKfC1awK";
+  const EXPECTED_TOKENS = [
+    "{{images/units/villager-1.png}}",
+    "{{images/buildings/farmhouse-1.png}}",
+    "{{images/technologies/tawara-1.png}}",
+    "{{general/build.webp}}",
+  ];
+
+  const assertRacecarImported = async (page: Page) => {
+    await expect(page.getByText("Sengoku Daimyo").first()).toBeVisible({
+      timeout: 5_000,
+    });
+
+    // All four expected icon tokens should appear *somewhere* in the
+    // build's notes. The Racecar build distributes them across step 1's
+    // "5 to Sheep / 1 villager to build farmhouse" line and step 3's
+    // "Queue tawara from farmhouse".
+    const allText = await page.evaluate(() => {
+      const tas = Array.from(
+        document.querySelectorAll<HTMLTextAreaElement>(
+          "textarea[aria-label^='Note']",
+        ),
+      );
+      return tas.map((t) => t.value).join("\n");
+    });
+    for (const token of EXPECTED_TOKENS) {
+      expect(
+        allText,
+        `expected token ${token} not found in any note. notes were:\n${allText}`,
+      ).toContain(token);
+    }
+
+    const survivors = await page.evaluate(() => {
+      const tas = Array.from(
+        document.querySelectorAll<HTMLTextAreaElement>(
+          "textarea[aria-label^='Note']",
+        ),
+      );
+      return tas.map((t) => t.value).filter((v) => /<img\b/i.test(v));
+    });
+    expect(
+      survivors,
+      `notes still contain raw <img> markup: ${JSON.stringify(survivors)}`,
+    ).toEqual([]);
+  };
+
+  test("URL import", async ({ page }) => {
+    await importFromUrl(page, RACECAR_URL);
+    await assertRacecarImported(page);
+  });
+
+  test("clipboard JSON paste", async ({ page }) => {
+    const json = readFileSync(FIXTURE_JSON, "utf8");
+    await importFromPaste(page, json);
+    await assertRacecarImported(page);
+  });
+
+  test(".bo file upload", async ({ page }) => {
+    await importFromUpload(page, FIXTURE_BO);
+    await assertRacecarImported(page);
+  });
 });
