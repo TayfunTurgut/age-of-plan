@@ -2,7 +2,7 @@ import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Lock, MoreHorizontal, Unlock, Users } from "lucide-react";
-import { forwardRef, memo, useState, type CSSProperties } from "react";
+import { forwardRef, useState, type CSSProperties } from "react";
 import type { BuildStep, Resources } from "@/types/buildOrder";
 import type { Civ } from "@/data/civs";
 import { cn } from "@/lib/utils";
@@ -103,7 +103,7 @@ const stepHasContent = (s: BuildStep): boolean => {
   );
 };
 
-const StepCardImpl = ({
+export const StepCard = ({
   step,
   index,
   civ,
@@ -151,9 +151,7 @@ const StepCardImpl = ({
     onDelete();
   };
 
-  const extraResources: ResourceKey[] = [];
-  if (civ?.id === "byzantines" || civ?.id === "ayyubids") extraResources.push("oliveOil");
-  if (civ?.id === "macedonian") extraResources.push("silver");
+  const extraResources = civ?.extraResources ?? [];
 
   // Droppable wrapper for the notes container so empty steps still accept drops.
   const { setNodeRef: setNotesDroppableRef } = useDroppable({
@@ -371,8 +369,6 @@ const StepCardImpl = ({
     </Card>
   );
 };
-
-export const StepCard = memo(StepCardImpl);
 
 const NotesStaticList = ({ notes }: { notes: Note[] }) => {
   if (notes.length === 0) {

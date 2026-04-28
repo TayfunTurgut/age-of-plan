@@ -1,4 +1,6 @@
 import { CIV_DATA } from "./generated/civData";
+import { getExtraResources } from "./civExtras";
+import type { ResourceKey } from "@/types/buildOrder";
 
 export type Civ = {
   id: string;
@@ -8,6 +10,8 @@ export type Civ = {
   tagline: string;
   /** Path (relative to ASSET_BASE_URL) to the civ flag icon. */
   flagIcon: string;
+  /** Extra resources beyond the standard four (e.g. olive oil, silver). */
+  extraResources: readonly ResourceKey[];
 };
 
 /** All 12 base civs + 10 variants, sourced from generated aoe4world data. */
@@ -17,6 +21,7 @@ export const CIVS: Civ[] = CIV_DATA.map((c) => ({
   variantOf: c.variantOf,
   tagline: c.tagline,
   flagIcon: c.flagPath,
+  extraResources: getExtraResources(c.id),
 }));
 
 export const getCiv = (id: string | undefined): Civ | undefined =>

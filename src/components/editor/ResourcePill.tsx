@@ -3,8 +3,9 @@ import { cn } from "@/lib/utils";
 import { getAssetUrl } from "@/lib/assets";
 import { DeltaIndicator } from "@/components/editor/DeltaIndicator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import type { ResourceKey } from "@/types/buildOrder";
 
-export type ResourceKey = "food" | "wood" | "gold" | "stone" | "builder" | "oliveOil" | "silver";
+export type { ResourceKey };
 
 const META: Record<ResourceKey, { label: string; dot: string; full: string; icon?: string }> = {
   food: { label: "F", dot: "bg-red-500", full: "Food", icon: "resources/food.png" },

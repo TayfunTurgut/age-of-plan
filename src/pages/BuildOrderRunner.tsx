@@ -101,6 +101,7 @@ const BuildOrderRunner = () => {
         case "ArrowRight":
         case "KeyD":
         case "Enter":
+          e.preventDefault();
           setStepIdx((i) => Math.min(bo.steps.length - 1, i + 1));
           break;
         case "ArrowLeft":
@@ -114,10 +115,12 @@ const BuildOrderRunner = () => {
           toggle();
           break;
         case "KeyR":
+          e.preventDefault();
           reset();
           setStepIdx(0);
           break;
         case "KeyM":
+          e.preventDefault();
           toggleMode();
           break;
       }

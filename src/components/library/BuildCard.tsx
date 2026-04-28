@@ -8,10 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { openOverlayFor } from "@/lib/overlayWindow";
 import { cn } from "@/lib/utils";
-
-const OVERLAY_FEATURES =
-  "popup=yes,width=380,height=240,menubar=no,toolbar=no,location=no,status=no,resizable=yes";
 
 type Props = {
   bo: BuildOrder;
@@ -28,9 +26,7 @@ const BuildCardImpl = ({ bo, onDelete, hideCiv = false }: Props) => {
     if (window.confirm("Delete this build order?")) onDelete(bo.id);
   };
 
-  const openOverlay = () => {
-    window.open(`/build/${bo.id}/run`, "aoe4-overlay", OVERLAY_FEATURES);
-  };
+  const openOverlay = () => openOverlayFor(bo.id);
 
   const goEdit = () => {
     navigate(`/build/${bo.id}/edit`);

@@ -142,10 +142,17 @@ const migrate = (input: unknown): { value: unknown; mutated: boolean } => {
       }
     }
 
-    // Default villagerCountManual to false when missing.
+    // Default villagerCountManual when missing. Preserves hand-tuned counts
+    // from the pre-`villagerCountManual` schema by inferring `manual` when
+    // the existing villagerCount diverges from the resource sum — otherwise
+    // the recompute below would silently overwrite a user's manual count.
     if (typeof nextStep.villagerCountManual !== "boolean") {
+      const inferredManual =
+        typeof nextStep.villagerCount === "number" &&
+        !!nextStep.resources &&
+        nextStep.villagerCount !== computeVillagerCount(nextStep.resources);
       mutated = true;
-      nextStep = { ...nextStep, villagerCountManual: false };
+      nextStep = { ...nextStep, villagerCountManual: inferredManual };
     }
 
     // When in auto mode, recompute villagerCount to match resource breakdown.
@@ -162,6 +169,21 @@ const migrate = (input: unknown): { value: unknown; mutated: boolean } => {
 
   if (!mutated) return { value: input, mutated: false };
   return { value: { ...bo, steps: nextSteps }, mutated: true };
+};
+
+/**
+ * Validate + migrate a parsed object into a canonical BuildOrder.
+ * Returns `null` when the input doesn't match the schema (post-migration).
+ * Pure — does not touch storage. The `mutated` flag tells the caller
+ * whether persistence is worth re-doing.
+ */
+export const parseStoredBuildOrder = (
+  input: unknown,
+): { value: BuildOrder; mutated: boolean } | null => {
+  const { value: migrated, mutated } = migrate(input);
+  const result = BuildOrderSchema.safeParse(migrated);
+  if (!result.success) return null;
+  return { value: result.data as BuildOrder, mutated };
 };
 
 const readFromStorage = (
@@ -181,26 +203,21 @@ const readFromStorage = (
     return null;
   }
 
-  const { value: migrated, mutated } = migrate(parsed);
-
-  const result = BuildOrderSchema.safeParse(migrated);
-  if (!result.success) {
-    console.warn(
-      `[storage] Build order at "${sourceKey}" failed schema validation:`,
-      result.error.issues.slice(0, 3),
-    );
+  const validated = parseStoredBuildOrder(parsed);
+  if (!validated) {
+    console.warn(`[storage] Build order at "${sourceKey}" failed schema validation.`);
     return null;
   }
 
-  if (mutated && isBrowser()) {
+  if (validated.mutated && isBrowser()) {
     try {
-      window.localStorage.setItem(sourceKey, JSON.stringify(result.data));
+      window.localStorage.setItem(sourceKey, JSON.stringify(validated.value));
     } catch {
       // ignore quota/storage errors — in-memory result is still valid.
     }
   }
 
-  return result.data as BuildOrder;
+  return validated.value;
 };
 
 export const getAllBuildOrders = (): BuildOrder[] => {

@@ -25,6 +25,8 @@ export type Resources = {
   silver?: number;
 };
 
+export type ResourceKey = keyof Resources;
+
 export type BuildStep = {
   id: string;
   age: 1 | 2 | 3 | 4;

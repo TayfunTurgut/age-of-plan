@@ -309,10 +309,14 @@ export const parseAoe4GuidesPayload = (payload: unknown, id: string): BuildOrder
   };
 };
 
+const AOE4GUIDES_FETCH_TIMEOUT_MS = 10_000;
+
 export const fetchAoe4GuidesBuild = async (id: string): Promise<BuildOrder> => {
   let res: Response;
   try {
-    res = await fetch(`https://aoe4guides.com/api/builds/${id}`);
+    res = await fetch(`https://aoe4guides.com/api/builds/${id}`, {
+      signal: AbortSignal.timeout(AOE4GUIDES_FETCH_TIMEOUT_MS),
+    });
   } catch (err) {
     const detail = err instanceof Error && err.message ? ` (${err.message})` : "";
     throw new Error(

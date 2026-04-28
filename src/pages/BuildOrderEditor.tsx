@@ -24,6 +24,7 @@ import { getBuildOrder, saveBuildOrder, StorageQuotaError } from "@/lib/storage"
 import { getCiv } from "@/data/civs";
 import { cloneStep, computeVillagerCount, createEmptyStep } from "@/lib/buildOrder";
 import { exportAsJson, exportAsRtsOverlay } from "@/lib/exportBuildOrder";
+import { openOverlayFor } from "@/lib/overlayWindow";
 import { InlineText } from "@/components/editor/InlineText";
 import { StepCard } from "@/components/editor/StepCard";
 import { Input } from "@/components/ui/input";
@@ -35,9 +36,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-
-const OVERLAY_FEATURES =
-  "popup=yes,width=380,height=240,menubar=no,toolbar=no,location=no,status=no,resizable=yes";
 
 type SaveStatus = "idle" | "saving" | "saved";
 type ActiveType = "step" | "note" | null;
@@ -74,6 +72,9 @@ const BuildOrderEditor = () => {
   const skipNextSave = useRef(true);
   const activeContainerRef = useRef<string | null>(null);
   const startSnapshotRef = useRef<BuildStep[] | null>(null);
+  // Holds the latest unsaved build + its debounce timer so the beforeunload
+  // listener can flush synchronously if the user closes the tab mid-debounce.
+  const pendingSaveRef = useRef<{ bo: BuildOrder; timer: number } | null>(null);
 
   // Load once.
   useEffect(() => {
@@ -94,7 +95,8 @@ const BuildOrderEditor = () => {
       return;
     }
     setSaveStatus("saving");
-    const t = setTimeout(() => {
+    const timer = window.setTimeout(() => {
+      pendingSaveRef.current = null;
       try {
         saveBuildOrder(bo);
         setSaveStatus("saved");
@@ -110,8 +112,31 @@ const BuildOrderEditor = () => {
         }
       }
     }, 500);
-    return () => clearTimeout(t);
+    pendingSaveRef.current = { bo, timer };
+    return () => {
+      clearTimeout(timer);
+      if (pendingSaveRef.current?.timer === timer) pendingSaveRef.current = null;
+    };
   }, [bo]);
+
+  // Flush any pending autosave before the tab unloads. localStorage is
+  // synchronous, so a successful write lands before the page is gone; we
+  // can't surface errors at this point, so the catch is silent.
+  useEffect(() => {
+    const onBeforeUnload = () => {
+      const pending = pendingSaveRef.current;
+      if (!pending) return;
+      clearTimeout(pending.timer);
+      pendingSaveRef.current = null;
+      try {
+        saveBuildOrder(pending.bo);
+      } catch {
+        // best-effort
+      }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -354,7 +379,7 @@ const BuildOrderEditor = () => {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => window.open(`/build/${bo.id}/run`, "aoe4-overlay", OVERLAY_FEATURES)}
+              onClick={() => openOverlayFor(bo.id)}
             >
               Preview Overlay
             </Button>

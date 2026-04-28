@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { saveBuildOrder, StorageQuotaError } from "@/lib/storage";
+import { parseStoredBuildOrder, saveBuildOrder, StorageQuotaError } from "@/lib/storage";
 import {
   extractAoe4GuidesId,
   fetchAoe4GuidesBuild,
@@ -26,16 +26,6 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   presetCivId?: string;
-};
-
-/** Detect a build that came out of our own native exporter. */
-const looksLikeNativeExport = (v: unknown): v is BuildOrder => {
-  if (!v || typeof v !== "object") return false;
-  const o = v as Record<string, unknown>;
-  if (typeof o.id !== "string" || !Array.isArray(o.steps)) return false;
-  return (o.steps as unknown[]).every(
-    (s) => s && typeof s === "object" && typeof (s as { id?: unknown }).id === "string",
-  );
 };
 
 /** Regenerate UUIDs and stamps so re-importing our own export doesn't
@@ -130,12 +120,15 @@ export const ImportModal = ({ open, onOpenChange, presetCivId }: Props) => {
     }
 
     // Fall back to our own native export shape. Track its failure reason
-    // separately so the user sees *why* both attempts failed.
+    // separately so the user sees *why* both attempts failed. Reuses the
+    // storage validate+migrate pipeline so a near-miss shape can't squeak
+    // through here only to fail at the next read.
     let nativeErr: string;
     try {
       const parsed = JSON.parse(text);
-      if (looksLikeNativeExport(parsed)) {
-        applyImport(reseedNative(parsed));
+      const validated = parseStoredBuildOrder(parsed);
+      if (validated) {
+        applyImport(reseedNative(validated.value));
         return;
       }
       nativeErr = "not a native Age of Plan export";

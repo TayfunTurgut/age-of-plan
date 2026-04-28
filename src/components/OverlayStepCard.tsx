@@ -5,7 +5,7 @@ import type { Civ } from "@/data/civs";
 import { getAssetUrl } from "@/lib/assets";
 import { formatTime } from "@/lib/time";
 import { renderNote } from "@/lib/noteRenderer";
-import { type ResourceKey } from "@/components/editor/ResourcePill";
+import type { ResourceKey } from "@/types/buildOrder";
 import { TouchableTooltip } from "@/components/ui/touchable-tooltip";
 import { cn } from "@/lib/utils";
 
@@ -121,10 +121,7 @@ const OverlayStepCard = ({
     );
   }
 
-  const extraResources: ResourceKey[] = [];
-  if (civ?.id === "byzantines" || civ?.id === "ayyubids")
-    extraResources.push("oliveOil");
-  if (civ?.id === "macedonian") extraResources.push("silver");
+  const extraResources = civ?.extraResources ?? [];
 
   const visibleTags = (step.tags ?? []).filter(
     (t) => t.unit.trim() || t.location.trim(),

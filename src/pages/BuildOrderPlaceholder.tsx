@@ -12,10 +12,8 @@ import {
 import OverlayPreview from "@/components/OverlayPreview";
 import { getBuildOrder } from "@/lib/storage";
 import { exportAsJson, exportAsRtsOverlay } from "@/lib/exportBuildOrder";
+import { openOverlayFor } from "@/lib/overlayWindow";
 import type { BuildOrder } from "@/types/buildOrder";
-
-const OVERLAY_FEATURES =
-  "popup=yes,width=380,height=240,menubar=no,toolbar=no,location=no,status=no,resizable=yes";
 
 const BuildOrderPlaceholder = () => {
   const { id } = useParams<{ id: string }>();
@@ -60,7 +58,7 @@ const BuildOrderPlaceholder = () => {
 
   const openOverlay = () => {
     if (!id) return;
-    window.open(`/build/${id}/run`, "aoe4-overlay", OVERLAY_FEATURES);
+    openOverlayFor(id);
   };
 
   return (

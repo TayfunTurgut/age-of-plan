@@ -194,6 +194,32 @@ describe("storage migration", () => {
     expect(raw).toContain("{{images/units/royal-knight-2.png}}");
   });
 
+  it("infers villagerCountManual=true when a legacy build's count diverges from resources and the flag is missing", () => {
+    // Pre-`villagerCountManual` schema. Without this inference, the
+    // migration would default the flag to false and the auto-recompute
+    // would silently overwrite the hand-tuned 12 with the resource sum (5).
+    const legacy = {
+      id: "bo-legacy-manual",
+      name: "Legacy manual",
+      civilization: "english",
+      createdAt: 1,
+      updatedAt: 2,
+      steps: [
+        {
+          id: "s1",
+          age: 1,
+          villagerCount: 12,
+          resources: { food: 2, wood: 3, gold: 0, stone: 0, builder: 0 },
+          notes: [],
+        },
+      ],
+    };
+    window.localStorage.setItem("aoe4bo:bo:bo-legacy-manual", JSON.stringify(legacy));
+    const bo = getBuildOrder("bo-legacy-manual");
+    expect(bo!.steps[0].villagerCountManual).toBe(true);
+    expect(bo!.steps[0].villagerCount).toBe(12);
+  });
+
   it("preserves manual villagerCount values that diverge from the resource sum", () => {
     const stored = {
       id: "bo-manual",

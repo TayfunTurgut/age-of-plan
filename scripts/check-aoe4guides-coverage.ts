@@ -82,7 +82,15 @@ const main = async () => {
   let scannedImgs = 0;
 
   for (const { id, expectedCiv } of BUILD_IDS) {
-    const res = await fetch(`https://aoe4guides.com/api/builds/${id}`);
+    let res: Response;
+    try {
+      res = await fetch(`https://aoe4guides.com/api/builds/${id}`, {
+        signal: AbortSignal.timeout(15_000),
+      });
+    } catch (err) {
+      console.error(`  ! ${id} fetch failed: ${(err as Error).message}`);
+      continue;
+    }
     if (!res.ok) {
       console.error(`  ! ${id} returned ${res.status}`);
       continue;

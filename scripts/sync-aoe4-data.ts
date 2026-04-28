@@ -25,6 +25,7 @@
 
 import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync, copyFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { EXTRA_RESOURCES_BY_CIV } from "../src/data/civExtras";
 
 const PUBLIC_ROOT = "public/aoe4";
 const GENERATED_ROOT = "src/data/generated";
@@ -135,9 +136,11 @@ type Aoe4WorldDoc = { data: Aoe4WorldEntity[] };
 
 type Kind = "units" | "buildings" | "technologies";
 
+const FETCH_TIMEOUT_MS = 30_000;
+
 const fetchKind = async (kind: Kind): Promise<Aoe4WorldEntity[]> => {
   const url = `https://data.aoe4world.com/${kind}/all.json`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   if (!res.ok) throw new Error(`fetch ${url} -> ${res.status}`);
   const doc = (await res.json()) as Aoe4WorldDoc;
   return doc.data;
@@ -150,7 +153,7 @@ const downloadOne = async (d: Download): Promise<"skipped" | "downloaded" | "fai
   if (fileNonEmpty(d.localPath)) return "skipped";
   ensureDir(dirname(d.localPath));
   try {
-    const res = await fetch(d.url);
+    const res = await fetch(d.url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!res.ok) {
       console.error(`  fail ${res.status}  ${d.descriptor}  ${d.url}`);
       return "failed";
@@ -211,13 +214,25 @@ const KIND_TO_CATEGORY: Record<Kind, IconCategory> = {
   technologies: "Technology",
 };
 
+/** Invert EXTRA_RESOURCES_BY_CIV to derive the civ-restriction list for a
+ *  given resource key. Returns undefined when no civ uses it (which
+ *  shouldn't happen — entries here exist precisely because at least one
+ *  civ does). */
+const civsForExtraResource = (key: string): CivId[] | undefined => {
+  const civs = Object.entries(EXTRA_RESOURCES_BY_CIV)
+    .filter(([, keys]) => (keys as readonly string[]).includes(key))
+    .map(([civ]) => civ)
+    .sort();
+  return civs.length > 0 ? civs : undefined;
+};
+
 const STATIC_RESOURCES: IconEntry[] = [
   { path: "resources/food.png", name: "Food", category: "Resource" },
   { path: "resources/wood.png", name: "Wood", category: "Resource" },
   { path: "resources/gold.png", name: "Gold", category: "Resource" },
   { path: "resources/stone.png", name: "Stone", category: "Resource" },
-  { path: "resources/oliveoil.png", name: "Olive Oil", category: "Resource", civs: ["ayyubids", "byzantines"] },
-  { path: "resources/silver.png", name: "Silver", category: "Resource", civs: ["macedonian"] },
+  { path: "resources/oliveoil.png", name: "Olive Oil", category: "Resource", civs: civsForExtraResource("oliveOil") },
+  { path: "resources/silver.png", name: "Silver", category: "Resource", civs: civsForExtraResource("silver") },
 ];
 
 const STATIC_AGES: IconEntry[] = [
