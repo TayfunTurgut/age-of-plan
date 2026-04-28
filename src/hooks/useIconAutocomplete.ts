@@ -260,17 +260,6 @@ export const useIconAutocomplete = ({
     [filteredIcons, onChange, textareaRef, value, close],
   );
 
-  // After a state-driven value+cursor update, restore the textarea's
-  // selection to where we want it.
-  // The consumer is expected to call `setSelectionRange` themselves after
-  // applying onChange's `nextCursor`. This effect is a safety net.
-  useEffect(() => {
-    if (!isOpen) return;
-    const ta = textareaRef.current;
-    if (!ta) return;
-    // No-op; placeholder for future cursor sync needs.
-  }, [isOpen, textareaRef]);
-
   const onKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
       if (!isOpen) return;

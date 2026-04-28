@@ -34,4 +34,4 @@ export const ICON_CATALOG: readonly IconEntry[] = Object.freeze([
 /** Catalog entries available to a given civ. Aliases carry no civ restriction
  *  and therefore appear for every civ. */
 export const getIconsForCiv = (civId: string): IconEntry[] =>
-  ICON_CATALOG.filter((e) => !e.civs || e.civs.includes(civId)).slice();
+  ICON_CATALOG.filter((e) => !e.civs || e.civs.includes(civId));

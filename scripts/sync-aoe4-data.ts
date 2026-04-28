@@ -243,8 +243,6 @@ const STATIC_AGES: IconEntry[] = [
 ];
 
 // ---------- Path migration map (old kebab paths → new images paths) ----------
-type MigrationPair = { oldPath: string; newPath: string };
-
 const buildPathMigration = (
   newCatalog: IconEntry[],
 ): Record<string, string> => {

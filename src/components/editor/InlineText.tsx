@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useAutoResize } from "@/hooks/useAutoResize";
 import { useFontSize } from "@/hooks/useFontSize";
 import { cn } from "@/lib/utils";
 import { DeltaIndicator } from "@/components/editor/DeltaIndicator";
@@ -60,23 +61,9 @@ export const InlineText = ({
     }
   }, [editing]);
 
-  // scrollHeight excludes the border, but with `box-sizing: border-box`
-  // (Tailwind default) the inline `height` includes it, so we add the border
-  // widths back — otherwise the content under-fits by ~2px and shows a scrollbar.
-  const autoResize = () => {
-    const el = inputRef.current;
-    if (el instanceof HTMLTextAreaElement) {
-      el.style.height = "auto";
-      const cs = getComputedStyle(el);
-      const borderY =
-        parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
-      el.style.height = `${el.scrollHeight + borderY}px`;
-    }
-  };
-
-  useEffect(() => {
-    if (editing && multiline) autoResize();
-  }, [editing, draft, multiline, fontSize]);
+  // Re-fit the textarea (only when in edit mode + multiline) on content or
+  // global font-size changes. No-op when the ref is an <input>.
+  useAutoResize(inputRef, [editing, draft, multiline, fontSize]);
 
   const commit = () => {
     if (validate && !validate(draft)) {

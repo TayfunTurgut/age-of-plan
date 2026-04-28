@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { BuildOrder, BuildStep, Resources } from "@/types/buildOrder";
 import { normalizeCivId } from "./importRtsOverlay";
 import { parseTime } from "@/lib/time";
-import { computeVillagerCount } from "@/lib/buildOrder";
+import { inferVillagerCountFields } from "@/lib/buildOrder";
 import {
   aoe4GuidesSrcToToken,
   capitalizeAoe4GuidesBasename,
@@ -216,10 +216,10 @@ const mapStep = (raw: RawAoe4Step, fallbackAge: 1 | 2 | 3 | 4): BuildStep => {
     if (parsed !== null) timeSeconds = parsed;
   }
 
-  const importedVillagers = toInt(raw.villagers);
-  const computedSum = computeVillagerCount(resources);
-  const villagerCountManual = importedVillagers > 0 && importedVillagers !== computedSum;
-  const villagerCount = villagerCountManual ? importedVillagers : computedSum;
+  const { villagerCount, villagerCountManual } = inferVillagerCountFields(
+    resources,
+    toInt(raw.villagers),
+  );
 
   const text = htmlToText(String(raw.description ?? ""));
   const notes = text ? [{ id: crypto.randomUUID(), text }] : [];

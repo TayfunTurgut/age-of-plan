@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { InlineText } from "./InlineText";
 import { InlineTimer } from "./InlineTimer";
-import { ResourcePill, type ResourceKey } from "./ResourcePill";
+import { ResourcePill } from "./ResourcePill";
 import { NoteRow } from "./NoteRow";
 import { getAssetUrl } from "@/lib/assets";
 import { StepTags } from "./StepTags";

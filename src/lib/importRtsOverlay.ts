@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { BuildOrder, BuildStep } from "@/types/buildOrder";
 import { parseTime } from "@/lib/time";
-import { computeVillagerCount } from "@/lib/buildOrder";
+import { inferVillagerCountFields } from "@/lib/buildOrder";
 import {
   aoe4GuidesAtTokenPathToToken,
   capitalizeAoe4GuidesBasename,
@@ -133,14 +133,16 @@ const clampAge = (a: unknown): 1 | 2 | 3 | 4 => {
   return 1;
 };
 
-const numOr = (v: unknown, fallback: number): number => {
+const parseNum = (v: unknown): number | undefined => {
   const n = typeof v === "number" ? v : parseInt(String(v ?? ""), 10);
-  return Number.isFinite(n) ? n : fallback;
+  return Number.isFinite(n) ? n : undefined;
 };
 
+const numOr = (v: unknown, fallback: number): number => parseNum(v) ?? fallback;
+
 const positiveOrUndefined = (v: unknown): number | undefined => {
-  const n = typeof v === "number" ? v : parseInt(String(v ?? ""), 10);
-  return Number.isFinite(n) && n > 0 ? n : undefined;
+  const n = parseNum(v);
+  return n !== undefined && n > 0 ? n : undefined;
 };
 
 type RawNote = string | { text?: string; note?: string };
@@ -202,6 +204,9 @@ const mapResources = (raw: RawResources | undefined) => {
     stone: numOr(r.stone, 0),
     builder: numOr(r.builder, 0),
   };
+  // Three-key precedence (first non-undefined wins): canonical camelCase,
+  // RTS_Overlay's snake_case, and the all-lowercase variant aoe4guides
+  // clipboard exports occasionally emit.
   const oliveOil = positiveOrUndefined(r.oliveOil ?? r.olive_oil ?? r.oliveoil);
   if (oliveOil !== undefined) resources.oliveOil = oliveOil;
   const silver = positiveOrUndefined(r.silver);
@@ -246,12 +251,14 @@ export const mapStep = (raw: RawStep): BuildStep => {
   }
 
   const resources = mapResources(raw.resources);
+  // Three-key precedence (first non-undefined wins): RTS_Overlay's canonical
+  // `villager_count`, aoe4guides clipboard's `villagers`, and the camelCase
+  // `villagerCount` we emit ourselves on native re-import.
   const importedCount = numOr(raw.villager_count ?? raw.villagers ?? raw.villagerCount, 0);
-  const computedSum = computeVillagerCount(resources);
-  // Preserve source-of-truth when a hand-authored count diverges from the
-  // resource breakdown (common for aoe4guides). Otherwise keep auto-mode.
-  const villagerCountManual = importedCount > 0 && importedCount !== computedSum;
-  const villagerCount = villagerCountManual ? importedCount : computedSum;
+  const { villagerCount, villagerCountManual } = inferVillagerCountFields(
+    resources,
+    importedCount,
+  );
 
   return {
     id: crypto.randomUUID(),

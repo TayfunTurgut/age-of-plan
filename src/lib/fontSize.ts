@@ -4,14 +4,14 @@
  * in `index.html` mirrors these constants by string for zero-flash bootstrapping.
  */
 
+import { isBrowser } from "./env";
+
 export type FontSize = 14 | 15 | 16 | 17 | 18 | 20;
 
 export const FONT_SIZES: readonly FontSize[] = [14, 15, 16, 17, 18, 20];
 export const FONT_SIZE_KEY = "aoe4bo:fontSize";
 export const FONT_SIZE_EVENT = "aoe4bo:fontsize-change";
 export const DEFAULT_FONT_SIZE: FontSize = 17;
-
-const isBrowser = (): boolean => typeof window !== "undefined" && !!document;
 
 const isValidFontSize = (n: number): n is FontSize =>
   (FONT_SIZES as readonly number[]).includes(n);

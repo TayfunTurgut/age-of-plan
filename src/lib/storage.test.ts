@@ -220,6 +220,35 @@ describe("storage migration", () => {
     expect(bo!.steps[0].villagerCount).toBe(12);
   });
 
+  it("does not re-persist a build order that requires no migration", () => {
+    // A canonical build (current schema, no legacy fields). The migrate
+    // pipeline should detect zero changes and skip the persistence write —
+    // pinning down that no migration branch silently returns mutated=true.
+    const canonical = {
+      id: "bo-canonical",
+      name: "Canonical",
+      civilization: "english",
+      createdAt: 1,
+      updatedAt: 2,
+      steps: [
+        {
+          id: "s1",
+          age: 1,
+          villagerCount: 5,
+          villagerCountManual: false,
+          resources: { food: 2, wood: 3, gold: 0, stone: 0, builder: 0 },
+          notes: [{ id: "n1", text: "no token here" }],
+        },
+      ],
+    };
+    window.localStorage.setItem("aoe4bo:bo:bo-canonical", JSON.stringify(canonical));
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    const bo = getBuildOrder("bo-canonical");
+    expect(bo).not.toBeNull();
+    expect(setItem).not.toHaveBeenCalled();
+    setItem.mockRestore();
+  });
+
   it("preserves manual villagerCount values that diverge from the resource sum", () => {
     const stored = {
       id: "bo-manual",

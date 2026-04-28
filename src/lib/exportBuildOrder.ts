@@ -1,5 +1,6 @@
 import type { BuildOrder } from "@/types/buildOrder";
 import { formatTime } from "@/lib/time";
+import { NOTE_TOKEN_RE } from "@/lib/noteToken";
 import { civIdToDisplayName } from "./importRtsOverlay";
 
 const triggerDownload = (filename: string, contents: string, mime: string): void => {
@@ -20,9 +21,7 @@ const safeFilename = (name: string): string =>
 
 /** Our internal `{{path.ext}}` → RTS_Overlay's `@path.ext@`. */
 const toRtsTokens = (text: string): string =>
-  text.includes("{{")
-    ? text.replace(/\{\{([^{}\s]+\.(?:png|webp))\}\}/g, "@$1@")
-    : text;
+  text.includes("{{") ? text.replace(NOTE_TOKEN_RE, "@$1@") : text;
 
 /** Pure serializer for the RTS_Overlay payload shape — exposed so tests
  *  (and any non-DOM consumers) can use it without triggering a download. */

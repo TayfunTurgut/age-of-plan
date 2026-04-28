@@ -4,6 +4,7 @@
  * but extra files. */
 import { useState, type ReactNode } from "react";
 import { getAssetUrl } from "@/lib/assets";
+import { NOTE_TOKEN_RE } from "@/lib/noteToken";
 import { ICON_CATALOG } from "@/data/iconCatalog";
 import { TouchableTooltip } from "@/components/ui/touchable-tooltip";
 
@@ -23,7 +24,6 @@ export type NoteToken =
   | { kind: "text"; value: string }
   | { kind: "image"; path: string };
 
-const TOKEN_RE = /\{\{([^{}\s]+\.(?:png|webp))\}\}/g;
 const MAX_CACHE = 200;
 const tokenCache = new Map<string, NoteToken[]>();
 
@@ -34,7 +34,7 @@ export const parseNoteTokens = (text: string): NoteToken[] => {
 
   const tokens: NoteToken[] = [];
   let last = 0;
-  for (const m of text.matchAll(TOKEN_RE)) {
+  for (const m of text.matchAll(NOTE_TOKEN_RE)) {
     const start = m.index ?? 0;
     if (start > last) tokens.push({ kind: "text", value: text.slice(last, start) });
     tokens.push({ kind: "image", path: m[1] });

@@ -10,6 +10,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Image as ImageIcon, X } from "lucide-react";
 import { hasNoteTokens, renderNote } from "@/lib/noteRenderer";
+import { useAutoResize } from "@/hooks/useAutoResize";
 import { useFontSize } from "@/hooks/useFontSize";
 import { useIconAutocomplete } from "@/hooks/useIconAutocomplete";
 import { IconPicker } from "./IconPicker";
@@ -71,19 +72,8 @@ export const NoteRow = ({
     setDraft(note.text);
   }, [note.text]);
 
-  // Auto-resize the textarea on every value change. scrollHeight excludes
-  // the border, but with `box-sizing: border-box` (Tailwind default) the
-  // inline `height` includes it, so we add the border widths back — without
-  // this the content under-fits by ~2px and shows a scrollbar.
-  useLayoutEffect(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    ta.style.height = "auto";
-    const cs = getComputedStyle(ta);
-    const borderY =
-      parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
-    ta.style.height = `${ta.scrollHeight + borderY}px`;
-  }, [draft, fontSize]);
+  // Re-fit the textarea on content or global font-size changes.
+  useAutoResize(textareaRef, [draft, fontSize]);
 
   // After a programmatic insert, place the cursor at the requested offset.
   useLayoutEffect(() => {

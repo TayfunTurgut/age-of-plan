@@ -4,12 +4,12 @@
  * mirrors these constants by string for zero-flash bootstrapping.
  */
 
+import { isBrowser } from "./env";
+
 export type Theme = "dark" | "light";
 
-const THEME_KEY = "aoe4bo:theme";
+export const THEME_KEY = "aoe4bo:theme";
 const DARK_CLASS = "dark";
-
-const isBrowser = (): boolean => typeof window !== "undefined" && !!document;
 
 export const getTheme = (): Theme => {
   if (!isBrowser()) return "dark";
