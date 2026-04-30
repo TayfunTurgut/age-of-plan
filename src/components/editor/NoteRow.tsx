@@ -172,11 +172,11 @@ export const NoteRow = ({
           autoFocus={note.text === ""}
           placeholder="Add a note… (type {{ for icons)"
           className={cn(
-            "w-full resize-none rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
+            "w-full resize-none rounded-md border border-input bg-background px-2 py-1 text-base text-foreground outline-none focus:ring-2 focus:ring-ring",
           )}
         />
         {showPreview && (
-          <div className="mt-1 px-2 text-xs leading-relaxed text-muted-foreground">
+          <div className="mt-1 px-2 text-sm leading-relaxed text-muted-foreground">
             {renderNote(draft)}
           </div>
         )}

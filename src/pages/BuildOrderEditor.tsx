@@ -545,7 +545,7 @@ const InsertHere = ({ onClick }: { onClick: () => void }) => (
     className="group flex h-4 w-full items-center justify-center"
   >
     <span className="h-px w-full bg-transparent transition-colors group-hover:bg-primary/40" />
-    <span className="absolute -translate-y-px rounded-full border border-primary/40 bg-background px-2 text-[10px] text-primary opacity-0 transition-opacity group-hover:opacity-100">
+    <span className="absolute -translate-y-px rounded-full border border-primary/40 bg-background px-2 text-xs text-primary opacity-0 transition-opacity group-hover:opacity-100">
       + Insert Step
     </span>
   </button>

@@ -69,7 +69,7 @@ const ResourcePillImpl = ({
           ) : (
             <span className={cn("h-2.5 w-2.5 rounded-full", meta.dot)} aria-hidden />
           )}
-          <span className="text-xs font-medium text-muted-foreground">{meta.label}</span>
+          <span className="text-sm font-medium text-muted-foreground">{meta.label}</span>
           {unknown ? (
             <span
               aria-label={`${meta.full} (unknown)`}
@@ -107,7 +107,7 @@ const ResourcePillImpl = ({
                 }
                 aria-pressed={unknown}
                 className={cn(
-                  "focus-ring inline-flex h-6 w-6 items-center justify-center rounded-full border text-xs font-semibold transition-colors",
+                  "focus-ring inline-flex h-6 w-6 items-center justify-center rounded-full border text-sm font-semibold transition-colors",
                   unknown
                     ? "border-primary/60 bg-primary/15 text-primary"
                     : "border-border bg-muted/40 text-muted-foreground/80 hover:bg-muted/70 hover:text-foreground",

@@ -81,11 +81,11 @@ const CompactResourceChip = ({
             className="h-3.5 w-3.5 object-contain"
           />
         ) : (
-          <span className="text-[11px] font-medium text-muted-foreground">
+          <span className="text-xs font-medium text-muted-foreground">
             {m.label[0]}
           </span>
         )}
-        <span className="text-sm tabular-nums text-foreground">
+        <span className="text-base tabular-nums text-foreground">
           {unknown ? "?" : value}
         </span>
       </span>
@@ -115,7 +115,7 @@ const OverlayStepCard = ({
 }: OverlayStepCardProps) => {
   if (!step) {
     return (
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="text-center text-sm text-muted-foreground">
         No steps in this build.
       </p>
     );
@@ -150,13 +150,13 @@ const OverlayStepCard = ({
             />
           </span>
         </TouchableTooltip>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-sm text-muted-foreground">
           {AGE_LABELS[step.age]}
         </span>
         {step.timeSeconds !== undefined && (
           <span
             className={cn(
-              "ml-auto rounded-full border border-border px-1.5 py-0 text-[11px] tabular-nums",
+              "ml-auto rounded-full border border-border px-1.5 py-0 text-xs tabular-nums",
               targetReached ? "text-primary" : "text-muted-foreground",
             )}
           >
@@ -187,7 +187,7 @@ const OverlayStepCard = ({
       </div>
 
       {(step.villagerCount > 0 || step.buildersUnknown) && (
-        <div className="mt-1 text-xs text-muted-foreground">
+        <div className="mt-1 text-sm text-muted-foreground">
           Vils:{" "}
           <span className="text-foreground">
             {step.buildersUnknown ? "?" : step.villagerCount}
@@ -196,7 +196,7 @@ const OverlayStepCard = ({
       )}
 
       {step.notes.length > 0 && (
-        <ul className="mt-2 space-y-1 text-sm leading-tight text-foreground [&_img]:!h-4 [&_img]:!w-4">
+        <ul className="mt-2 space-y-1 text-base leading-tight text-foreground [&_img]:!h-4 [&_img]:!w-4">
           {step.notes.map((n) => (
             <li key={n.id} className="flex gap-1.5">
               <span className="mt-1 inline-block h-1 w-1 shrink-0 rounded-full bg-muted-foreground/60" />
@@ -210,14 +210,14 @@ const OverlayStepCard = ({
 
       {visibleTags.length > 0 && (
         <div className="mt-2">
-          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">
             Positions
           </div>
           <div className="mt-1 flex flex-wrap gap-1">
             {visibleTags.map((t) => (
               <span
                 key={t.id}
-                className="inline-flex items-center gap-1 rounded-full border border-teal-500/40 bg-teal-500/10 px-1.5 py-0 text-xs text-teal-700 dark:text-teal-300"
+                className="inline-flex items-center gap-1 rounded-full border border-teal-500/40 bg-teal-500/10 px-1.5 py-0 text-sm text-teal-700 dark:text-teal-300"
               >
                 <span>{t.unit || "—"}</span>
                 <ArrowRight
@@ -232,7 +232,7 @@ const OverlayStepCard = ({
       )}
 
       {showAdvanceHint && (
-        <span className="pointer-events-none absolute bottom-1 right-2 text-[11px] text-muted-foreground/30 transition-opacity group-hover:text-muted-foreground/70">
+        <span className="pointer-events-none absolute bottom-1 right-2 text-xs text-muted-foreground/30 transition-opacity group-hover:text-muted-foreground/70">
           →
         </span>
       )}

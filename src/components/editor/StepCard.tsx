@@ -59,7 +59,7 @@ const AgeIcon = forwardRef<HTMLSpanElement, { age: 1 | 2 | 3 | 4; className?: st
     return (
       <span ref={ref} className={cn("inline-flex items-center justify-center", className)}>
         {failed ? (
-          <span className="text-xs font-bold">{AGE_LABELS[age].roman}</span>
+          <span className="text-sm font-bold">{AGE_LABELS[age].roman}</span>
         ) : (
           <img
             src={getAssetUrl(AGE_ICON[age])}
@@ -173,7 +173,7 @@ export const StepCard = ({
     >
       {/* Drag handle + index */}
       <div className="flex flex-col items-center gap-1 pt-1">
-        <span className="text-xs font-medium text-muted-foreground">{index + 1}</span>
+        <span className="text-sm font-medium text-muted-foreground">{index + 1}</span>
         <button
           type="button"
           aria-label="Drag step"
@@ -224,7 +224,7 @@ export const StepCard = ({
 
           {/* Time */}
           <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground">Time</span>
+            <span className="text-sm text-muted-foreground">Time</span>
             <InlineTimer
               value={step.timeSeconds}
               ariaLabel="Time (m:ss)"
@@ -328,7 +328,7 @@ export const StepCard = ({
               strategy={verticalListSortingStrategy}
             >
               {step.notes.length === 0 ? (
-                <div className="flex min-h-12 items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground/70">
+                <div className="flex min-h-12 items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground/70">
                   Drop notes here
                 </div>
               ) : (
@@ -351,7 +351,7 @@ export const StepCard = ({
           <button
             type="button"
             onClick={addNote}
-            className="focus-ring mt-1.5 rounded text-xs text-muted-foreground transition-colors hover:text-primary"
+            className="focus-ring mt-1.5 rounded text-sm text-muted-foreground transition-colors hover:text-primary"
           >
             + Add Note
           </button>
@@ -373,7 +373,7 @@ export const StepCard = ({
 const NotesStaticList = ({ notes }: { notes: Note[] }) => {
   if (notes.length === 0) {
     return (
-      <div className="flex min-h-12 items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground/70">
+      <div className="flex min-h-12 items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground/70">
         Drop notes here
       </div>
     );
@@ -381,7 +381,7 @@ const NotesStaticList = ({ notes }: { notes: Note[] }) => {
   return (
     <div className="space-y-1.5">
       {notes.map((n) => (
-        <div key={n.id} className="flex items-start gap-2 px-1 py-1 text-sm">
+        <div key={n.id} className="flex items-start gap-2 px-1 py-1 text-base">
           <GripVertical className="mt-0.5 h-3 w-3 text-muted-foreground/50" />
           <span className="min-w-0 flex-1 truncate">{n.text || "Add a note…"}</span>
         </div>

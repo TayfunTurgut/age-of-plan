@@ -66,14 +66,14 @@ const IconPickerImpl = ({
       onMouseDown={(e) => e.preventDefault()}
     >
       {filteredIcons.length === 0 ? (
-        <div className="p-3 text-xs text-muted-foreground">
+        <div className="p-3 text-sm text-muted-foreground">
           No icons match{" "}
           <span className="font-mono text-foreground">{query || "—"}</span>
         </div>
       ) : (
         ICON_CATEGORIES.filter((cat) => groups.has(cat)).map((cat) => (
           <div key={cat}>
-            <div className="sticky top-0 z-[1] bg-popover px-3 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+            <div className="sticky top-0 z-[1] bg-popover px-3 py-1 text-xs uppercase tracking-wider text-muted-foreground">
               {cat}
             </div>
             {groups.get(cat)!.map(({ entry, absoluteIndex }) => (
@@ -89,7 +89,7 @@ const IconPickerImpl = ({
           </div>
         ))
       )}
-      <div className="sticky bottom-0 border-t border-border bg-popover/90 px-3 py-1.5 text-[10px] text-muted-foreground backdrop-blur">
+      <div className="sticky bottom-0 border-t border-border bg-popover/90 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur">
         Type{" "}
         <span className="rounded border border-border bg-muted/40 px-1 font-mono">
           {"{{"}

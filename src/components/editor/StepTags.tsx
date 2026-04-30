@@ -22,7 +22,7 @@ type Props = {
 };
 
 const PILL_BASE =
-  "inline-flex items-center gap-1.5 rounded-full border border-teal-500/40 bg-teal-500/10 px-2 py-1 text-xs text-teal-700 dark:text-teal-300";
+  "inline-flex items-center gap-1.5 rounded-full border border-teal-500/40 bg-teal-500/10 px-2 py-1 text-sm text-teal-700 dark:text-teal-300";
 
 const StepTagsImpl = ({ step, civId, onUpdate }: Props) => {
   const tags = step.tags ?? [];
@@ -85,7 +85,7 @@ const StepTagsImpl = ({ step, civId, onUpdate }: Props) => {
       <button
         type="button"
         onClick={add}
-        className="focus-ring mt-1.5 rounded text-xs text-teal-600/80 transition-colors hover:text-teal-700 dark:text-teal-400/80 dark:hover:text-teal-300"
+        className="focus-ring mt-1.5 rounded text-sm text-teal-600/80 transition-colors hover:text-teal-700 dark:text-teal-400/80 dark:hover:text-teal-300"
       >
         + Add Tag
       </button>
@@ -143,7 +143,7 @@ const TagCombobox = ({
           type="button"
           aria-label={ariaLabel}
           className={cn(
-            "rounded px-1 text-xs outline-none transition-colors hover:bg-teal-500/15 focus-visible:ring-1 focus-visible:ring-teal-500/60",
+            "rounded px-1 text-sm outline-none transition-colors hover:bg-teal-500/15 focus-visible:ring-1 focus-visible:ring-teal-500/60",
             !value && "text-teal-600/60 dark:text-teal-400/60",
           )}
         >
@@ -174,7 +174,7 @@ const TagCombobox = ({
                   Use "{draft.trim()}"
                 </button>
               ) : (
-                <span className="text-xs text-muted-foreground">No suggestions.</span>
+                <span className="text-sm text-muted-foreground">No suggestions.</span>
               )}
             </CommandEmpty>
             <CommandGroup>

@@ -193,7 +193,7 @@ const BuildOrderRunner = () => {
         <button
           type="button"
           onClick={() => window.close()}
-          className="focus-ring mt-1 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          className="focus-ring mt-1 rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           Close window
         </button>
@@ -223,13 +223,13 @@ const BuildOrderRunner = () => {
     >
       {/* Title bar */}
       <div className="flex items-center gap-2 border-b border-border px-2 py-1">
-        <span className="truncate font-display text-xs text-primary">{bo.name}</span>
-        <span className="truncate text-xs text-muted-foreground">
+        <span className="truncate font-display text-sm text-primary">{bo.name}</span>
+        <span className="truncate text-sm text-muted-foreground">
           {civ ? civ.name : "Unknown civ"}
           {bo.matchup ? ` • ${bo.matchup}` : ""}
         </span>
         {collapsed && totalSteps > 0 && (
-          <span className="ml-auto text-xs tabular-nums text-muted-foreground">
+          <span className="ml-auto text-sm tabular-nums text-muted-foreground">
             {stepIdx + 1}/{totalSteps}
           </span>
         )}
@@ -285,13 +285,13 @@ const BuildOrderRunner = () => {
               Previous step
             </TooltipContent>
           </Tooltip>
-          <span className="px-1 text-xs tabular-nums text-muted-foreground">
+          <span className="px-1 text-sm tabular-nums text-muted-foreground">
             <span className="text-foreground">{stepIdx + 1}</span>/{totalSteps}
           </span>
 
           <span
             className={cn(
-              "mx-auto font-mono text-sm tabular-nums text-foreground",
+              "mx-auto font-mono text-base tabular-nums text-foreground",
               isAutoAdvance &&
                 isRunning &&
                 isApproachingNext &&

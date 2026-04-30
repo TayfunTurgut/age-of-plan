@@ -14,7 +14,7 @@ export const DeltaIndicator = ({ value, format = "number" }: Props) => {
   return (
     <span
       className={cn(
-        "pl-2 text-[10px] font-medium tabular-nums leading-none",
+        "pl-2 text-xs font-medium tabular-nums leading-none",
         value > 0 ? "text-green-600 dark:text-green-500" : "text-destructive",
       )}
       aria-label={`Change from previous step: ${text}`}
