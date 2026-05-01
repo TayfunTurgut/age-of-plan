@@ -85,7 +85,7 @@ const NoteIcon = ({
       alt=""
       loading="lazy"
       onError={() => setFailed(true)}
-      className="mx-0.5 inline h-5 w-5 align-text-bottom"
+      className="mx-0.5 inline h-6 w-6 align-text-bottom"
     />
   );
   if (!withTooltip) return img;

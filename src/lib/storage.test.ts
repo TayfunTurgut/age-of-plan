@@ -70,6 +70,32 @@ describe("storage round-trip", () => {
     saveBuildOrder(makeBo());
     expect(getAllBuildOrders()).toHaveLength(1);
   });
+
+  it("round-trips an optional prerequisite string on a step", () => {
+    const bo = makeBo({
+      steps: [
+        {
+          id: "s1",
+          age: 2,
+          villagerCount: 14,
+          resources: { food: 6, wood: 4, gold: 2, stone: 0, builder: 2 },
+          prerequisite: "400 food {{resources/food.png}} for Feudal",
+          notes: [],
+        },
+      ],
+    });
+    saveBuildOrder(bo);
+    const readBack = getBuildOrder("bo-1");
+    expect(readBack?.steps[0].prerequisite).toBe(
+      "400 food {{resources/food.png}} for Feudal",
+    );
+  });
+
+  it("treats a step without prerequisite as undefined (no field added on read)", () => {
+    saveBuildOrder(makeBo());
+    const readBack = getBuildOrder("bo-1");
+    expect(readBack?.steps[0].prerequisite).toBeUndefined();
+  });
 });
 
 describe("storage migration", () => {

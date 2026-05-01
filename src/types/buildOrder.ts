@@ -46,6 +46,13 @@ export type BuildStep = {
   resources: Resources;
   /** Canonical seconds from the start of the game. */
   timeSeconds?: number;
+  /**
+   * Optional prerequisite — what the player needs at this point to be
+   * able to act on this step (e.g. "400 food, 200 gold to age up").
+   * Supports the same `{{path/to/icon.webp}}` inline icon tokens as
+   * notes. Renders at the top of the step's notes/tags block.
+   */
+  prerequisite?: string;
   notes: { id: string; text: string }[];
   /**
    * Optional unit-position tags answering "where should my <unit> be?".

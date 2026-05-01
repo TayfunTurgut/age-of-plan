@@ -6,9 +6,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Image as ImageIcon, X } from "lucide-react";
+import { Image as ImageIcon } from "lucide-react";
 import { hasNoteTokens, renderNote } from "@/lib/noteRenderer";
 import { useAutoResize } from "@/hooks/useAutoResize";
 import { useFontSize } from "@/hooks/useFontSize";
@@ -17,60 +15,36 @@ import { IconPicker } from "./IconPicker";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-type Note = { id: string; text: string };
-
 type Props = {
-  note: Note;
-  stepId: string;
+  value: string;
   /** Civ id for filtering icon picker entries. */
   civId: string;
-  index: number;
+  /** Called when the user commits (Enter, blur). Empty string means cleared. */
   onCommit: (text: string) => void;
-  onDelete: () => void;
+  /** Auto-focus the textarea on mount (used when the user just clicked "+ Add Prerequisite"). */
+  autoFocus?: boolean;
 };
 
 /**
- * One row in a step's note list. Rendered as a persistent textarea (not a
- * click-to-edit display) so the icon autocomplete has a stable cursor and
- * ref. Auto-resizes vertically as content grows. The autocomplete activates
- * when the user types `{{` and offers a filtered icon picker; the picker
- * button next to the delete X is the discoverable alternative for users
- * who haven't memorized the trigger.
+ * Per-step prerequisite editor — a slimmed-down `NoteRow` that drops the
+ * sortable wrapper and the explicit delete button. Clearing the textarea
+ * (commit with `""`) is the way to remove the prerequisite; the parent
+ * collapses the row back to the "+ Add Prerequisite" button.
  */
-export const NoteRow = ({
-  note,
-  stepId,
-  civId,
-  index,
-  onCommit,
-  onDelete,
-}: Props) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({
-      id: note.id,
-      data: { type: "note", noteId: note.id, sourceStepId: stepId },
-    });
-
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+export const PrerequisiteRow = ({ value, civId, onCommit, autoFocus = false }: Props) => {
+  const style: CSSProperties = {};
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  // Local "draft" state lets the textarea stay editable without thrashing
-  // the autosave cycle on every keystroke. Commit on blur (or after a
-  // picker insert).
-  const [draft, setDraft] = useState(note.text);
+  // Local "draft" state mirrors NoteRow's autosave-friendly pattern: keep
+  // typing fast, commit on blur or Enter.
+  const [draft, setDraft] = useState(value);
   const pendingCursor = useRef<number | null>(null);
-  // Re-run the resize effect when the global font size changes — line-height
-  // in pixels grows with rem, so a stale inline height would show a scrollbar.
   const { fontSize } = useFontSize();
 
-  // Keep draft in sync if the upstream note changes from outside (rare —
-  // currently only happens on initial mount or after a duplicate-step).
+  // Keep draft in sync with upstream changes (e.g., undo, duplicate-step).
   useEffect(() => {
-    setDraft(note.text);
-  }, [note.text]);
+    setDraft(value);
+  }, [value]);
 
   // Re-fit the textarea on content or global font-size changes.
   useAutoResize(textareaRef, [draft, fontSize]);
@@ -100,11 +74,8 @@ export const NoteRow = ({
     onChange: handleAutocompleteChange,
   });
 
-  // Refresh the autocomplete trigger detection on every input change and
-  // selection change.
   const onTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setDraft(e.target.value);
-    // Defer to next microtask so selectionStart reflects the new value.
     queueMicrotask(autocomplete.refresh);
   };
 
@@ -112,14 +83,12 @@ export const NoteRow = ({
     autocomplete.onKeyDown(e);
     if (e.defaultPrevented) return;
     if (e.key === "Enter" && !e.shiftKey) {
-      // Commit and stay focused — we want the textarea to behave like a
-      // multi-note row, not a multi-line paragraph editor.
       e.preventDefault();
       onCommit(draft.trim());
       textareaRef.current?.blur();
     } else if (e.key === "Escape") {
       e.preventDefault();
-      setDraft(note.text);
+      setDraft(value);
       textareaRef.current?.blur();
     }
   };
@@ -127,37 +96,15 @@ export const NoteRow = ({
   const onTextareaSelect = () => autocomplete.refresh();
 
   const onTextareaBlur = () => {
-    // Closing the picker on blur is necessary because `mousedown` on the
-    // picker is preventDefault'd (textarea keeps focus), but if focus moves
-    // anywhere else we should hide the panel.
     const trimmed = draft.trim();
-    if (trimmed !== note.text) onCommit(trimmed);
+    if (trimmed !== value) onCommit(trimmed);
     autocomplete.close();
   };
 
   const showPreview = hasNoteTokens(draft);
 
-  if (isDragging) {
-    return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        className="h-9 rounded-md border border-dashed border-primary/40 bg-transparent"
-      />
-    );
-  }
-
   return (
-    <div ref={setNodeRef} style={style} className="flex items-start gap-1">
-      <button
-        type="button"
-        aria-label="Drag note"
-        className="relative mt-1 flex h-6 w-4 cursor-grab items-center justify-center rounded text-muted-foreground/50 hover:text-foreground active:cursor-grabbing before:absolute before:-inset-2 before:content-[''] focus-ring"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-3 w-3" />
-      </button>
+    <div style={style} className="flex items-start gap-1">
       <div className="min-w-0 flex-1">
         <textarea
           ref={textareaRef}
@@ -168,9 +115,9 @@ export const NoteRow = ({
           onClick={onTextareaSelect}
           onBlur={onTextareaBlur}
           rows={1}
-          aria-label={`Note ${index + 1}`}
-          autoFocus={note.text === ""}
-          placeholder="Add a note… (type {{ for icons)"
+          aria-label="Prerequisite"
+          autoFocus={autoFocus}
+          placeholder="e.g. 400 food + 200 gold for Feudal (type {{ for icons)"
           className={cn(
             "w-full resize-none rounded-md border border-input bg-background px-2 py-1 text-base text-foreground outline-none focus:ring-2 focus:ring-ring",
           )}
@@ -204,14 +151,6 @@ export const NoteRow = ({
         </TooltipTrigger>
         <TooltipContent>Insert icon (or type &#123;&#123;)</TooltipContent>
       </Tooltip>
-      <button
-        type="button"
-        onClick={onDelete}
-        aria-label="Delete note"
-        className="focus-ring mt-1 rounded p-1 text-muted-foreground hover:bg-muted/50 hover:text-destructive"
-      >
-        <X className="h-4 w-4" />
-      </button>
     </div>
   );
 };

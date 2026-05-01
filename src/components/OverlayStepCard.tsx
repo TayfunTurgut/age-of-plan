@@ -195,8 +195,17 @@ const OverlayStepCard = ({
         </div>
       )}
 
+      {step.prerequisite && step.prerequisite.trim() && (
+        <div className="mt-2 rounded-md bg-muted/40 px-2 py-1.5 text-base leading-tight text-foreground [&_img]:!h-5 [&_img]:!w-5">
+          <span className="mr-1.5 align-text-bottom text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Need
+          </span>
+          {renderNote(step.prerequisite, { withTooltip: true })}
+        </div>
+      )}
+
       {step.notes.length > 0 && (
-        <ul className="mt-2 space-y-1 text-base leading-tight text-foreground [&_img]:!h-4 [&_img]:!w-4">
+        <ul className="mt-2 space-y-1 text-base leading-tight text-foreground [&_img]:!h-5 [&_img]:!w-5">
           {step.notes.map((n) => (
             <li key={n.id} className="flex gap-1.5">
               <span className="mt-1 inline-block h-1 w-1 shrink-0 rounded-full bg-muted-foreground/60" />

@@ -43,6 +43,7 @@ const BuildStepSchema = z.object({
   buildersUnknown: z.boolean().optional(),
   resources: ResourcesSchema,
   timeSeconds: z.number().optional(),
+  prerequisite: z.string().optional(),
   notes: z.array(NoteSchema),
   tags: z.array(TagSchema).optional(),
 });

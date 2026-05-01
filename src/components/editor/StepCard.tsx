@@ -25,6 +25,7 @@ import { InlineText } from "./InlineText";
 import { InlineTimer } from "./InlineTimer";
 import { ResourcePill } from "./ResourcePill";
 import { NoteRow } from "./NoteRow";
+import { PrerequisiteRow } from "./PrerequisiteRow";
 import { getAssetUrl } from "@/lib/assets";
 import { StepTags } from "./StepTags";
 import { DeltaIndicator } from "./DeltaIndicator";
@@ -93,6 +94,7 @@ type Props = {
 };
 
 const stepHasContent = (s: BuildStep): boolean => {
+  if ((s.prerequisite ?? "").trim().length > 0) return true;
   if (s.notes.some((n) => n.text.trim().length > 0)) return true;
   if (s.villagerCount > 0) return true;
   if ((s.tags ?? []).some((t) => t.unit.trim().length > 0 || t.location.trim().length > 0))
@@ -311,6 +313,33 @@ export const StepCard = ({
             />
           )}
         </div>
+
+        {/* Prerequisite — single optional field shown above notes. The
+            value is stored as `undefined` when absent so older builds
+            round-trip cleanly; it switches to "" once the user clicks
+            "+ Add Prerequisite", and back to `undefined` if cleared. */}
+        {!overlay && (
+          <div className="mt-3">
+            {step.prerequisite !== undefined ? (
+              <PrerequisiteRow
+                value={step.prerequisite}
+                civId={civ?.id ?? ""}
+                autoFocus={step.prerequisite === ""}
+                onCommit={(text) =>
+                  update({ prerequisite: text === "" ? undefined : text })
+                }
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => update({ prerequisite: "" })}
+                className="focus-ring rounded text-sm text-muted-foreground transition-colors hover:text-primary"
+              >
+                + Add Prerequisite
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Notes */}
         <div

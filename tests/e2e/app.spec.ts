@@ -206,6 +206,63 @@ test.describe("editor full flow", () => {
     await expect(reloaded).toHaveValue(/^build \{\{[^}]+\}\}\s*$/);
   });
 
+  test("+ Add Prerequisite reveals editor; text + icon token persist on reload", async ({
+    page,
+  }) => {
+    await page.goto("/civ/english");
+    await page.getByRole("link", { name: "New Build Order" }).click();
+    await expect(page).toHaveURL(/\/build\/.+\/edit$/);
+    const editorUrl = page.url();
+    await addStep(page);
+
+    // Step has a "+ Add Prerequisite" affordance and no Prerequisite textarea yet.
+    const addPrereqBtn = page
+      .getByRole("button", { name: "+ Add Prerequisite" })
+      .first();
+    await expect(addPrereqBtn).toBeVisible();
+    await expect(
+      page.getByRole("textbox", { name: "Prerequisite" }),
+    ).toHaveCount(0);
+
+    // Click reveals the textarea, focused.
+    await addPrereqBtn.click();
+    const prereq = page.getByRole("textbox", { name: "Prerequisite" }).first();
+    await expect(prereq).toBeVisible();
+    await expect(prereq).toBeFocused();
+
+    // Type free text + an icon token via the {{ autocomplete trigger.
+    await prereq.fill("400 food {{food");
+    const picker = page.getByRole("listbox", { name: "Icon picker" });
+    await expect(picker).toBeVisible();
+    await prereq.press("Enter");
+    await expect(picker).not.toBeVisible();
+    await expect(prereq).toHaveValue(/^400 food \{\{[^}]+\}\}\s*$/);
+
+    // Re-focus and blur to commit the draft.
+    await prereq.focus();
+    await prereq.press("Tab");
+
+    // Live preview renders an inline image inside the prerequisite cell.
+    const prereqCell = prereq.locator("../..");
+    await expect(prereqCell.locator("img")).toBeVisible();
+    await expect(page.getByText("Saved")).toBeVisible({ timeout: 5_000 });
+
+    // Reload — text + token persist.
+    await page.goto(editorUrl);
+    const reloaded = page.getByRole("textbox", { name: "Prerequisite" }).first();
+    await expect(reloaded).toHaveValue(/^400 food \{\{[^}]+\}\}\s*$/);
+
+    // Clearing collapses the editor back to the "+ Add Prerequisite" button.
+    await reloaded.fill("");
+    await reloaded.press("Tab");
+    await expect(
+      page.getByRole("button", { name: "+ Add Prerequisite" }).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("textbox", { name: "Prerequisite" }),
+    ).toHaveCount(0);
+  });
+
   test("villager lock toggles between auto and manual", async ({ page }) => {
     await page.goto("/civ/french");
     await page.getByRole("link", { name: "New Build Order" }).click();
