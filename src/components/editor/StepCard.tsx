@@ -58,7 +58,10 @@ const AgeIcon = forwardRef<HTMLSpanElement, { age: 1 | 2 | 3 | 4; className?: st
   ({ age, className }, ref) => {
     const [failed, setFailed] = useState(false);
     return (
-      <span ref={ref} className={cn("inline-flex items-center justify-center", className)}>
+      <span
+        ref={ref}
+        className={cn("inline-flex items-center justify-center align-middle", className)}
+      >
         {failed ? (
           <span className="text-sm font-bold">{AGE_LABELS[age].roman}</span>
         ) : (
