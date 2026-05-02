@@ -8,6 +8,7 @@ import {
   closestCenter,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -142,6 +143,35 @@ const BuildOrderEditor = () => {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
   );
+
+  // Each step registers multiple droppables (the step itself, an inner
+  // notes-container, and a sortable per note) in the same DndContext. With the
+  // default `closestCenter` strategy, dragging a step would often pick a note
+  // or notes-container as the closest target — those ids don't match any step,
+  // so the reorder no-ops until the cursor drifts far enough horizontally to
+  // re-rank a real step droppable on top. Filter candidates by the active
+  // item's type to keep the drag axis-aligned with intent.
+  const collisionDetectionStrategy = useCallback<CollisionDetection>((args) => {
+    const activeKind = args.active.data.current?.type;
+    if (activeKind === "step") {
+      return closestCenter({
+        ...args,
+        droppableContainers: args.droppableContainers.filter(
+          (c) => c.data.current?.type === "step",
+        ),
+      });
+    }
+    if (activeKind === "note") {
+      return closestCenter({
+        ...args,
+        droppableContainers: args.droppableContainers.filter((c) => {
+          const t = c.data.current?.type;
+          return t === "note" || t === "notes-container";
+        }),
+      });
+    }
+    return closestCenter(args);
+  }, []);
 
   const civ = useMemo(() => (bo ? getCiv(bo.civilization) : undefined), [bo]);
 
@@ -463,7 +493,7 @@ const BuildOrderEditor = () => {
           ) : (
             <DndContext
               sensors={sensors}
-              collisionDetection={closestCenter}
+              collisionDetection={collisionDetectionStrategy}
               onDragStart={onDragStart}
               onDragOver={onDragOver}
               onDragEnd={onDragEnd}
