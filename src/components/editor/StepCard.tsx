@@ -1,10 +1,20 @@
-import { forwardRef, useState } from "react";
-import { Lock, Trash2, Unlock, Users, X } from "lucide-react";
+import { forwardRef, useState, type CSSProperties } from "react";
+import { useDroppable } from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, Lock, MoreHorizontal, Unlock, Users } from "lucide-react";
 
 import { DeltaIndicator } from "@/components/editor/DeltaIndicator";
 import { InlineText } from "@/components/editor/InlineText";
 import { InlineTimer } from "@/components/editor/InlineTimer";
+import { NoteRow } from "@/components/editor/NoteRow";
+import { PrerequisiteRow } from "@/components/editor/PrerequisiteRow";
 import { ResourcePill } from "@/components/editor/ResourcePill";
+import { StepTags } from "@/components/editor/StepTags";
 import { Card } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -24,7 +34,7 @@ import type { Civ } from "@/data/civs";
 import { getAssetUrl } from "@/lib/assets";
 import { newId } from "@/lib/id";
 import { cn } from "@/lib/utils";
-import type { BuildStep, Resources } from "@/types/buildOrder";
+import type { BuildNote, BuildStep, Resources } from "@/types/buildOrder";
 
 const deltaOf = (curr?: number, prev?: number) =>
   curr === undefined || prev === undefined ? undefined : curr - prev;
@@ -83,7 +93,10 @@ type Props = {
   onChange: (next: BuildStep) => void;
   onDuplicate: () => void;
   onDelete: () => void;
-  /** Previous step, used to render +/- deltas on numeric fields. */
+  /** When true, render as a static (non-sortable) drag-overlay clone. */
+  overlay?: boolean;
+  /** True when a note from another step is hovering this step. */
+  isOverForeignNote?: boolean;
   previousStep?: BuildStep;
 };
 
@@ -91,14 +104,13 @@ function stepHasContent(s: BuildStep): boolean {
   if ((s.prerequisite ?? "").trim().length > 0) return true;
   if (s.notes.some((n) => n.text.trim().length > 0)) return true;
   if (s.villagerCount > 0) return true;
+  if ((s.tags ?? []).some((t) => t.unit.trim() || t.location.trim())) return true;
   const r = s.resources;
   return [r.food, r.wood, r.gold, r.stone, r.builder, r.oliveOil ?? 0, r.silver ?? 0].some(
     (n) => n > 0,
   );
 }
 
-/** One build step. Drag-and-drop, draggable notes, tags, and the icon picker
- *  arrive in M11; here notes/prerequisite are plain editable fields. */
 export function StepCard({
   step,
   index,
@@ -106,8 +118,28 @@ export function StepCard({
   onChange,
   onDuplicate,
   onDelete,
+  overlay = false,
+  isOverForeignNote = false,
   previousStep,
 }: Props) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({
+      id: step.id,
+      disabled: overlay,
+      data: { type: "step", stepId: step.id },
+    });
+
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const { setNodeRef: setNotesDroppableRef } = useDroppable({
+    id: `notes:${step.id}`,
+    data: { type: "notes-container", stepId: step.id },
+    disabled: overlay,
+  });
+
   const update = (patch: Partial<BuildStep>) => onChange({ ...step, ...patch });
   const updateResource = (key: keyof Resources, n: number) =>
     update({ resources: { ...step.resources, [key]: n } });
@@ -122,8 +154,7 @@ export function StepCard({
     notes.splice(i, 1);
     update({ notes });
   };
-  const addNote = () =>
-    update({ notes: [...step.notes, { id: newId(), text: "" }] });
+  const addNote = () => update({ notes: [...step.notes, { id: newId(), text: "" }] });
 
   const handleDelete = () => {
     if (stepHasContent(step)) {
@@ -138,13 +169,27 @@ export function StepCard({
 
   return (
     <Card
+      ref={overlay ? undefined : setNodeRef}
+      style={overlay ? undefined : style}
       className={cn(
         "relative flex gap-3 border-l-4 bg-card p-3 transition-colors duration-200 sm:p-4",
         AGE_BORDER[step.age],
+        isDragging && !overlay && "opacity-40",
+        overlay && "shadow-2xl ring-1 ring-primary/40",
       )}
     >
+      {/* Drag handle + index */}
       <div className="flex flex-col items-center gap-1 pt-1">
         <span className="text-sm font-medium text-muted-foreground">{index + 1}</span>
+        <button
+          type="button"
+          aria-label="Drag step"
+          className="focus-ring relative flex h-10 w-6 cursor-grab items-center justify-center rounded text-muted-foreground before:absolute before:-inset-2 before:content-[''] hover:bg-muted/50 hover:text-foreground active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
       </div>
 
       <div className="min-w-0 flex-1">
@@ -199,7 +244,7 @@ export function StepCard({
                 aria-label="Step actions"
                 className="focus-ring rounded-md p-1 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               >
-                <Trash2 className="h-4 w-4" />
+                <MoreHorizontal className="h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={onDuplicate}>Duplicate step</DropdownMenuItem>
@@ -270,67 +315,65 @@ export function StepCard({
           )}
         </div>
 
-        {/* Prerequisite — stored as undefined when absent so old builds round-trip. */}
-        <div className="mt-3">
-          {step.prerequisite !== undefined ? (
-            <div className="flex items-start gap-1">
-              <InlineText
+        {/* Prerequisite — undefined when absent so old builds round-trip. */}
+        {!overlay && (
+          <div className="mt-3">
+            {step.prerequisite !== undefined ? (
+              <PrerequisiteRow
                 value={step.prerequisite}
-                multiline
+                civId={civ?.id ?? ""}
                 autoFocus={step.prerequisite === ""}
-                ariaLabel="Prerequisite"
-                placeholder="Prerequisite (e.g. 400 food to age up)"
-                className="flex-1"
                 onCommit={(text) =>
                   update({ prerequisite: text === "" ? undefined : text })
                 }
               />
+            ) : (
               <button
                 type="button"
-                onClick={() => update({ prerequisite: undefined })}
-                aria-label="Remove prerequisite"
-                className="focus-ring rounded p-1 text-muted-foreground hover:text-destructive"
+                onClick={() => update({ prerequisite: "" })}
+                className="focus-ring rounded text-sm text-muted-foreground transition-colors hover:text-primary"
               >
-                <X className="h-3.5 w-3.5" />
+                + Add prerequisite
               </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => update({ prerequisite: "" })}
-              className="focus-ring rounded text-sm text-muted-foreground transition-colors hover:text-primary"
-            >
-              + Add prerequisite
-            </button>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
-        {/* Notes — plain editable list (draggable NoteRow + icon picker land in M11). */}
-        <div className="mt-3">
-          {step.notes.length > 0 && (
-            <ul className="space-y-1.5">
-              {step.notes.map((note, i) => (
-                <li key={note.id} className="flex items-start gap-1">
-                  <InlineText
-                    value={note.text}
-                    multiline
-                    autoFocus={note.text === ""}
-                    ariaLabel={`Note ${i + 1}`}
-                    placeholder="Add a note…"
-                    className="flex-1"
-                    onCommit={(text) => setNote(i, text)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => deleteNote(i)}
-                    aria-label={`Delete note ${i + 1}`}
-                    className="focus-ring rounded p-1 text-muted-foreground hover:text-destructive"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </li>
-              ))}
-            </ul>
+        {/* Notes */}
+        <div
+          ref={overlay ? undefined : setNotesDroppableRef}
+          className={cn(
+            "mt-3 rounded-md p-1 transition-shadow",
+            isOverForeignNote && "ring-1 ring-primary/40",
+          )}
+        >
+          {overlay ? (
+            <NotesStaticList notes={step.notes} />
+          ) : (
+            <SortableContext
+              items={step.notes.map((n) => n.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {step.notes.length === 0 ? (
+                <div className="flex min-h-12 items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground">
+                  Drop notes here
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {step.notes.map((note, i) => (
+                    <NoteRow
+                      key={note.id}
+                      note={note}
+                      stepId={step.id}
+                      civId={civ?.id ?? ""}
+                      index={i}
+                      onCommit={(text) => setNote(i, text)}
+                      onDelete={() => deleteNote(i)}
+                    />
+                  ))}
+                </div>
+              )}
+            </SortableContext>
           )}
           <button
             type="button"
@@ -340,8 +383,33 @@ export function StepCard({
             + Add note
           </button>
         </div>
+
+        {/* Tags */}
+        {!overlay && (
+          <StepTags step={step} civId={civ?.id ?? ""} onUpdate={(tags) => update({ tags })} />
+        )}
       </div>
     </Card>
+  );
+}
+
+function NotesStaticList({ notes }: { notes: BuildNote[] }) {
+  if (notes.length === 0) {
+    return (
+      <div className="flex min-h-12 items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground">
+        Drop notes here
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-1.5">
+      {notes.map((n) => (
+        <div key={n.id} className="flex items-start gap-2 px-1 py-1 text-base">
+          <GripVertical className="mt-0.5 h-3 w-3 text-muted-foreground/50" />
+          <span className="min-w-0 flex-1 truncate">{n.text || "Add a note…"}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 
