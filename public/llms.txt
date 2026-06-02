@@ -1,0 +1,38 @@
+# Age of Plan
+
+> Create, edit, import, export, and follow Age of Empires IV build orders step by step in the browser, including a chrome-less overlay for a second monitor or phone.
+
+Age of Plan is a client-side build-order editor and overlay runner for AoE4.
+Builds are stored locally in the browser; there is no server or account. Builds
+can be imported from aoe4guides.com or RTS_Overlay JSON, and exported back to
+JSON for transfer between devices.
+
+## Pages
+
+- [Home](/): Pick a civilization to view or create build orders.
+- [Library](/library): Browse, search, filter, and sort saved build orders.
+
+## Civilizations
+
+- [English](/civ/english)
+- [French](/civ/french)
+- [Holy Roman Empire](/civ/hre)
+- [Mongols](/civ/mongols)
+- [Rus](/civ/rus)
+- [Chinese](/civ/chinese)
+- [Delhi Sultanate](/civ/delhi)
+- [Abbasid Dynasty](/civ/abbasid)
+- [Ottomans](/civ/ottomans)
+- [Malians](/civ/malians)
+- [Byzantines](/civ/byzantines)
+- [Japanese](/civ/japanese)
+- [Ayyubids](/civ/ayyubids)
+- [Zhu Xi's Legacy](/civ/zhu-xi)
+- [Jeanne d'Arc](/civ/jeanne-darc)
+- [Order of the Dragon](/civ/order-of-the-dragon)
+- [Knights Templar](/civ/knights-templar)
+- [House of Lancaster](/civ/house-of-lancaster)
+- [Golden Horde](/civ/golden-horde)
+- [Macedonian Dynasty](/civ/macedonian)
+- [Sengoku Daimyo](/civ/sengoku-daimyo)
+- [Tughluqid Dynasty](/civ/tughluqid)

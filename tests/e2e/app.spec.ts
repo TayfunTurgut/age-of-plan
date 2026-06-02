@@ -7,7 +7,9 @@ test("home renders the app shell", async ({ page }) => {
     page.getByRole("heading", { level: 1, name: "Age of Plan" }),
   ).toBeVisible();
   // Nav chrome is present on layout routes.
-  await expect(page.getByRole("link", { name: "Library" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Library", exact: true }),
+  ).toBeVisible();
 });
 
 test("unknown route renders 404", async ({ page }) => {
