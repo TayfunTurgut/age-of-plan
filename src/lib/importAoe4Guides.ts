@@ -302,6 +302,7 @@ export async function fetchAoe4GuidesBuild(id: string): Promise<BuildOrder> {
     const detail = err instanceof Error && err.message ? ` (${err.message})` : "";
     throw new Error(
       `Could not fetch from aoe4guides.com${detail} — the request may have been blocked or the network failed. Try pasting the build JSON instead.`,
+      { cause: err },
     );
   }
 
@@ -313,8 +314,8 @@ export async function fetchAoe4GuidesBuild(id: string): Promise<BuildOrder> {
   let data: unknown;
   try {
     data = await res.json();
-  } catch {
-    throw new Error("aoe4guides.com returned an invalid response.");
+  } catch (err) {
+    throw new Error("aoe4guides.com returned an invalid response.", { cause: err });
   }
 
   return parseAoe4GuidesPayload(data, id);

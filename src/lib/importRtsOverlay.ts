@@ -277,7 +277,7 @@ export function parseRtsOverlayJson(json: string): BuildOrder {
     data = JSON.parse(json);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "unknown error";
-    throw new Error(`Invalid JSON: ${msg}`);
+    throw new Error(`Invalid JSON: ${msg}`, { cause: err });
   }
 
   if (!data || typeof data !== "object" || Array.isArray(data)) {

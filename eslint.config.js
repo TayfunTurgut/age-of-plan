@@ -19,6 +19,11 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // react-hooks v7 added this opinionated rule. We deliberately load
+      // route-param-keyed persisted data (localStorage) into state inside a
+      // mount/id effect — an idiom useSyncExternalStore can't express for
+      // param-dependent reads. Core rules-of-hooks + exhaustive-deps stay on.
+      "react-hooks/set-state-in-effect": "off",
       "react-refresh/only-export-components": [
         "warn",
         { allowConstantExport: true },

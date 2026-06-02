@@ -113,32 +113,30 @@ export function ImportModal({ open, onOpenChange, presetCivId }: Props) {
       return;
     }
 
-    // Try RTS_Overlay shape first.
-    let rtsErr: Error | null = null;
+    // Try RTS_Overlay shape first; fall back to our native export shape (reusing
+    // the storage validate+migrate pipeline so a near-miss can't squeak through
+    // to fail at the next read). Only surface an error if both attempts fail.
     try {
       applyImport(parseRtsOverlayJson(text));
       return;
-    } catch (err) {
-      rtsErr = err instanceof Error ? err : new Error(String(err));
-    }
-
-    // Fall back to our native export shape, reusing the storage validate+migrate
-    // pipeline so a near-miss can't squeak through to fail at the next read.
-    let nativeErr: string;
-    try {
-      const validated = parseStoredBuildOrder(JSON.parse(text));
-      if (validated) {
-        applyImport(reseedNative(validated.value));
-        return;
+    } catch (rtsErr) {
+      const rtsMsg = rtsErr instanceof Error ? rtsErr.message : String(rtsErr);
+      try {
+        const validated = parseStoredBuildOrder(JSON.parse(text));
+        if (validated) {
+          applyImport(reseedNative(validated.value));
+          return;
+        }
+        setError(
+          `Couldn't import this. As RTS_Overlay: ${rtsMsg}. As native export: not a native Age of Plan export.`,
+        );
+      } catch (nativeErr) {
+        const nativeMsg = nativeErr instanceof Error ? nativeErr.message : "unknown error";
+        setError(
+          `Couldn't import this. As RTS_Overlay: ${rtsMsg}. As native export: invalid JSON — ${nativeMsg}.`,
+        );
       }
-      nativeErr = "not a native Age of Plan export";
-    } catch (err) {
-      nativeErr = `invalid JSON — ${err instanceof Error ? err.message : "unknown error"}`;
     }
-
-    setError(
-      `Couldn't import this. As RTS_Overlay: ${rtsErr?.message ?? "unknown error"}. As native export: ${nativeErr}.`,
-    );
   };
 
   const readFile = (file: File) => {
