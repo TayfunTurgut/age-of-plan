@@ -10,6 +10,13 @@ export default defineConfig({
     hmr: { overlay: false },
   },
   plugins: [react()],
+  build: {
+    // The heaviest routes (editor, runner) are already split via React.lazy.
+    // The remaining vendor bundle gzips to ~180kB, acceptable for a client SPA;
+    // a manualChunks vendor split introduced circular chunks, so we keep Vite's
+    // default chunking and lift the conservative size warning instead.
+    chunkSizeWarningLimit: 900,
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

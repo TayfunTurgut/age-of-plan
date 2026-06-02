@@ -35,3 +35,27 @@ root `SPEC.md` wins.
 
 For all other requirements (routes, data model, persistence keys, importers/exporters,
 overlay behavior, SEO surfaces, mobile), defer to root `SPEC.md`.
+
+## Final reconciliation (what actually shipped)
+
+The build is complete. Decisions that superseded the original plan/reference:
+
+- **Toolchain modernized post-build** to unblock Cloudflare and stay current:
+  Vite 7, Vitest 4, ESLint 10, TypeScript 5.9, zod 4, react-router 7,
+  lucide-react 1, sonner 2, tailwind-merge 3, @hookform/resolvers 5, jsdom 29.
+  React 18 and Tailwind 3 were **deliberately kept** (React 19 would force
+  dropping react-helmet-async; Tailwind 4 is a full config migration) — both are
+  candidate follow-up upgrades.
+- **IDs** use `lib/id.ts` (`newId`), not `crypto.randomUUID` directly, so
+  create/import work outside secure contexts (LAN/mobile over plain http).
+- **NewBuildOrder** is a pick-civ + name form (SPEC §3) rather than the
+  reference's auto-redirect.
+- **Overlay runner follows the main window's theme** live (SPEC §8–9) instead of
+  hardcoding dark as the reference did.
+- **Deployment:** Cloudflare Workers static assets via `wrangler.jsonc`
+  (`assets.not_found_handling: "single-page-application"`).
+- **Code-splitting:** route-based `React.lazy` for the editor + runner; remaining
+  vendor bundle ships as one chunk (~202 kB gzip) — a manualChunks vendor split
+  caused circular chunks and was reverted.
+- ESLint `react-hooks/set-state-in-effect` is disabled (conflicts with the
+  route-keyed load-persisted-data-on-mount idiom); all other strict rules on.
