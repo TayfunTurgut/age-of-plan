@@ -283,3 +283,38 @@ export function parseAoe4GuidesPayload(payload: unknown, id: string): BuildOrder
     steps,
   };
 }
+
+const AOE4GUIDES_FETCH_TIMEOUT_MS = 10_000;
+
+/**
+ * Fetch + parse a build from the aoe4guides.com public API. CORS is open
+ * (`access-control-allow-origin: *`), but we still surface a paste-the-JSON
+ * hint on network failure since the JSON tab is a co-equal import path.
+ */
+export async function fetchAoe4GuidesBuild(id: string): Promise<BuildOrder> {
+  let res: Response;
+  try {
+    res = await fetch(`https://aoe4guides.com/api/builds/${id}`, {
+      signal: AbortSignal.timeout(AOE4GUIDES_FETCH_TIMEOUT_MS),
+    });
+  } catch (err) {
+    const detail = err instanceof Error && err.message ? ` (${err.message})` : "";
+    throw new Error(
+      `Could not fetch from aoe4guides.com${detail} — the request may have been blocked or the network failed. Try pasting the build JSON instead.`,
+    );
+  }
+
+  if (!res.ok) {
+    if (res.status === 404) throw new Error("Build not found on aoe4guides.com.");
+    throw new Error(`aoe4guides.com returned an error (status ${res.status}).`);
+  }
+
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error("aoe4guides.com returned an invalid response.");
+  }
+
+  return parseAoe4GuidesPayload(data, id);
+}

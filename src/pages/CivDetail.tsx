@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Download } from "lucide-react";
 
 import { BuildCard } from "@/components/library/BuildCard";
 import { CivFlag } from "@/components/CivFlag";
+import { ImportModal } from "@/components/ImportModal";
 import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -42,6 +44,7 @@ export default function CivDetail() {
   const parent = getCiv(civ?.variantOf);
   const [builds, setBuilds] = useState<BuildOrder[]>([]);
   const [sort, setSort] = useState<SortKey>("updated");
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -106,9 +109,14 @@ export default function CivDetail() {
             <p className="mt-1 text-base text-muted-foreground">{civ.tagline}</p>
           </div>
         </div>
-        <Button asChild size="lg">
-          <Link to={`/build/new?civ=${civ.id}`}>New build order</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="lg">
+            <Link to={`/build/new?civ=${civ.id}`}>New build order</Link>
+          </Button>
+          <Button variant="outline" size="lg" onClick={() => setImportOpen(true)}>
+            <Download className="h-4 w-4" /> Import
+          </Button>
+        </div>
       </header>
 
       <section className="mt-10">
@@ -148,6 +156,12 @@ export default function CivDetail() {
           </ul>
         )}
       </section>
+
+      <ImportModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        presetCivId={civ.id}
+      />
     </section>
   );
 }

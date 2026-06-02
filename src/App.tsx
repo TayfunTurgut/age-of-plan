@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "@/components/AppLayout";
@@ -28,14 +29,16 @@ function RouteFallback() {
   );
 }
 
-// QueryClientProvider is introduced in M9 alongside the aoe4guides importer,
-// its only consumer.
+// react-query's only consumer is the aoe4guides importer (ImportModal).
+const queryClient = new QueryClient();
+
 export default function App() {
   return (
     <ErrorBoundary>
-      <TooltipProvider>
-        <Toaster />
-        <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <BrowserRouter>
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route element={<AppLayout />}>
@@ -52,7 +55,8 @@ export default function App() {
             </Routes>
           </Suspense>
         </BrowserRouter>
-      </TooltipProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }

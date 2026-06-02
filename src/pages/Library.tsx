@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 
 import { BuildCard } from "@/components/library/BuildCard";
 import { CivFlag } from "@/components/CivFlag";
+import { ImportModal } from "@/components/ImportModal";
 import { Seo } from "@/components/Seo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ export default function Library() {
   const [debounced, setDebounced] = useState("");
   const [civFilter, setCivFilter] = useState<string>("all");
   const [sort, setSort] = useState<SortKey>("updated");
+  const [importOpen, setImportOpen] = useState(false);
 
   // Initial load + cross-tab sync (another tab saved/deleted a build).
   useEffect(() => {
@@ -146,6 +148,15 @@ export default function Library() {
             <SelectItem value="created-asc">Oldest</SelectItem>
           </SelectContent>
         </Select>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setImportOpen(true)}
+          className="ml-auto"
+        >
+          <Download className="h-4 w-4" /> Import
+        </Button>
       </div>
 
       {noBuildsAtAll ? (
@@ -173,6 +184,8 @@ export default function Library() {
           ))}
         </ul>
       )}
+
+      <ImportModal open={importOpen} onOpenChange={setImportOpen} />
     </section>
   );
 }

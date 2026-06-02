@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { CivFlag } from "@/components/CivFlag";
+import { ImportModal } from "@/components/ImportModal";
 import { Seo } from "@/components/Seo";
 import { Card } from "@/components/ui/card";
 import { CIVS, getCiv } from "@/data/civs";
 
 /** Home — civilization picker. Renders inside AppLayout (nav + footer). */
 export default function Index() {
+  const [importOpen, setImportOpen] = useState(false);
+
   return (
     <section className="page-enter">
       <Seo
@@ -29,6 +33,14 @@ export default function Index() {
           >
             Browse the library
           </Link>
+          <span className="mx-2 opacity-60">·</span>
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="underline-offset-2 hover:text-primary hover:underline focus-ring"
+          >
+            or import a build
+          </button>
         </p>
       </header>
 
@@ -59,6 +71,8 @@ export default function Index() {
           );
         })}
       </ul>
+
+      <ImportModal open={importOpen} onOpenChange={setImportOpen} />
     </section>
   );
 }
