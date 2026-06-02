@@ -1,17 +1,13 @@
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
-/** Read the pre-hydration theme from the document root.
- *  M4 replaces this with the reactive `useTheme` hook for live updates. */
-function currentTheme(): "light" | "dark" {
-  if (typeof document === "undefined") return "dark";
-  return document.documentElement.classList.contains("dark") ? "dark" : "light";
-}
+import { useTheme } from "@/hooks/useTheme";
 
-/** App toaster. Matches the current theme so toasts read correctly. */
+/** App toaster. Follows the current theme so toasts match light/dark, live. */
 export function Toaster(props: ToasterProps) {
+  const { theme } = useTheme();
   return (
     <Sonner
-      theme={currentTheme()}
+      theme={theme}
       className="toaster group"
       toastOptions={{
         classNames: {

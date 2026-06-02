@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { Swords } from "lucide-react";
 
+import { FontSizeToggle } from "@/components/FontSizeToggle";
 import { NavLink } from "@/components/NavLink";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
-/** Primary navigation. Theme + font-size controls are added in M4. */
+/** Primary navigation with route links plus theme + font-size controls. */
 export function NavBar() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
@@ -22,6 +24,10 @@ export function NavBar() {
           </NavLink>
           <NavLink to="/library">Library</NavLink>
           <NavLink to="/build/new">New build</NavLink>
+          <div className="ml-1 flex items-center border-l border-border pl-1">
+            <ThemeToggle />
+            <FontSizeToggle />
+          </div>
         </div>
       </nav>
     </header>
