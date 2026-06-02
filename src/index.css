@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Age of Plan — design system.
+   :root holds the LIGHT (parchment) palette.
+   .dark holds the DARK MEDIEVAL palette (default, applied via index.html script). */
+
+@layer base {
+  :root {
+    --background: 38 40% 94%;
+    --foreground: 222 28% 14%;
+
+    --card: 38 38% 97%;
+    --card-foreground: 222 28% 14%;
+
+    --popover: 38 38% 97%;
+    --popover-foreground: 222 28% 14%;
+
+    --primary: 41 72% 42%;
+    --primary-foreground: 38 40% 98%;
+
+    --secondary: 38 26% 86%;
+    --secondary-foreground: 222 28% 18%;
+
+    --muted: 38 22% 88%;
+    --muted-foreground: 222 14% 38%;
+
+    --accent: 28 52% 38%;
+    --accent-foreground: 38 40% 98%;
+
+    --destructive: 0 62% 42%;
+    --destructive-foreground: 38 40% 98%;
+
+    --border: 38 24% 78%;
+    --input: 38 24% 80%;
+    --ring: 41 72% 42%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222 28% 8%;
+    --foreground: 38 38% 88%;
+
+    --card: 222 26% 11%;
+    --card-foreground: 38 38% 88%;
+
+    --popover: 222 28% 9%;
+    --popover-foreground: 38 38% 88%;
+
+    --primary: 41 72% 58%;
+    --primary-foreground: 222 30% 10%;
+
+    --secondary: 222 20% 16%;
+    --secondary-foreground: 38 34% 86%;
+
+    --muted: 222 18% 14%;
+    --muted-foreground: 38 14% 62%;
+
+    --accent: 28 52% 46%;
+    --accent-foreground: 38 40% 94%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 38 38% 94%;
+
+    --border: 222 18% 20%;
+    --input: 222 18% 20%;
+    --ring: 41 72% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* Themed scrollbars. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.4);
+    border-radius: 4px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--primary) / 0.6);
+  }
+}
+
+@layer utilities {
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes page-fade {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .page-enter {
+    animation: page-fade 220ms ease-out;
+  }
+}

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Age of Plan — AoE4 Build Order Editor & Overlay</title>
+    <meta
+      name="description"
+      content="Create, edit, import, export, and follow Age of Empires IV build orders step by step — with a chrome-less overlay for a second monitor or your phone."
+    />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Age of Plan — AoE4 Build Order Editor & Overlay" />
+    <meta
+      property="og:description"
+      content="Create, edit, import, export, and follow Age of Empires IV build orders step by step."
+    />
+    <meta property="og:image" content="/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Age of Plan — AoE4 Build Order Editor & Overlay" />
+    <meta
+      name="twitter:description"
+      content="Create, edit, import, export, and follow Age of Empires IV build orders step by step."
+    />
+    <meta name="twitter:image" content="/og-image.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <!-- Apply theme before hydration to avoid a flash of the wrong theme. Default dark. -->
+    <script>
+      try {
+        var t = localStorage.getItem("aoe4bo:theme");
+        if (t === "light") document.documentElement.classList.remove("dark");
+        else document.documentElement.classList.add("dark");
+      } catch (e) {}
+    </script>
+    <!-- Apply global font size before hydration. Allowed: 14/15/16/17/18/20, default 17. -->
+    <script>
+      try {
+        var fs = parseInt(localStorage.getItem("aoe4bo:fontSize") || "17", 10);
+        if ([14, 15, 16, 17, 18, 20].indexOf(fs) >= 0) {
+          document.documentElement.style.fontSize = fs + "px";
+        }
+      } catch (e) {}
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
