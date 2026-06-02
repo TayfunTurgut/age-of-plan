@@ -4,11 +4,10 @@ dist-ssr
 *.local
 .DS_Store
 
-# Editors / local tooling
+# Editors
 .vscode/*
 !.vscode/extensions.json
 .idea
-.serena/
 
 # Logs
 logs
@@ -23,3 +22,10 @@ coverage
 playwright-report
 test-results
 *.tsbuildinfo
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
