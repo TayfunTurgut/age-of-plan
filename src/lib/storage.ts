@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { computeVillagerCount } from "@/lib/buildOrder";
 import { isBrowser } from "@/lib/env";
+import { newId } from "@/lib/id";
 import { NOTE_TOKEN_RE } from "@/lib/noteToken";
 import type { BuildOrder } from "@/types/buildOrder";
 import { PATH_MIGRATION } from "@/data/generated/pathMigration";
@@ -113,7 +114,7 @@ function migrateStep(stepRaw: unknown): { step: unknown; mutated: boolean } {
     step = {
       ...step,
       notes: step.notes.map((n) =>
-        typeof n === "string" ? { id: crypto.randomUUID(), text: n } : n,
+        typeof n === "string" ? { id: newId(), text: n } : n,
       ),
     };
   }

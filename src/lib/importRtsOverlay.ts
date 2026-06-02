@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { inferVillagerCountFields } from "@/lib/buildOrder";
+import { newId } from "@/lib/id";
 import { parseTime } from "@/lib/time";
 import type { BuildOrder, BuildStep } from "@/types/buildOrder";
 import {
@@ -177,7 +178,7 @@ function mapNotes(raw: unknown): { id: string; text: string }[] {
       return "";
     })
     .filter((t) => t.length > 0)
-    .map((text) => ({ id: crypto.randomUUID(), text: convertIconTokens(text) }));
+    .map((text) => ({ id: newId(), text: convertIconTokens(text) }));
 }
 
 function mapResources(raw: Record<string, unknown> | undefined): BuildStep["resources"] {
@@ -244,7 +245,7 @@ export function mapStep(raw: RawStep): BuildStep {
   );
 
   return {
-    id: crypto.randomUUID(),
+    id: newId(),
     age: clampAge(raw.age),
     villagerCount,
     villagerCountManual,
@@ -312,7 +313,7 @@ export function parseRtsOverlayJson(json: string): BuildOrder {
   }
 
   return {
-    id: crypto.randomUUID(),
+    id: newId(),
     name: String(parsed.name ?? parsed.title ?? "Imported build"),
     civilization: normalizeCivId(String(parsed.civilization ?? parsed.civ ?? "")),
     author: parsed.author ? String(parsed.author) : "",

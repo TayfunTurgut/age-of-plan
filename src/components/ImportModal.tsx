@@ -26,6 +26,7 @@ import {
   fetchAoe4GuidesBuild,
 } from "@/lib/importAoe4Guides";
 import { parseRtsOverlayJson } from "@/lib/importRtsOverlay";
+import { newId } from "@/lib/id";
 import type { BuildOrder, BuildStep } from "@/types/buildOrder";
 
 type Props = {
@@ -39,12 +40,12 @@ function reseedNative(bo: BuildOrder): BuildOrder {
   const now = Date.now();
   const steps: BuildStep[] = bo.steps.map((s) => ({
     ...s,
-    id: crypto.randomUUID(),
+    id: newId(),
     resources: { ...s.resources },
-    notes: s.notes.map((n) => ({ id: crypto.randomUUID(), text: n.text })),
-    tags: s.tags?.map((t) => ({ ...t, id: crypto.randomUUID() })),
+    notes: s.notes.map((n) => ({ id: newId(), text: n.text })),
+    tags: s.tags?.map((t) => ({ ...t, id: newId() })),
   }));
-  return { ...bo, id: crypto.randomUUID(), createdAt: now, updatedAt: now, steps };
+  return { ...bo, id: newId(), createdAt: now, updatedAt: now, steps };
 }
 
 export function ImportModal({ open, onOpenChange, presetCivId }: Props) {

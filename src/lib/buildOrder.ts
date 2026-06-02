@@ -1,3 +1,4 @@
+import { newId } from "@/lib/id";
 import type { BuildOrder, BuildStep, Resources } from "@/types/buildOrder";
 
 const emptyResources = (): Resources => ({
@@ -43,7 +44,7 @@ export function inferVillagerCountFields(
 /** A fresh step, inheriting age/villager/builders context from the previous one. */
 export function createEmptyStep(previousStep?: BuildStep): BuildStep {
   return {
-    id: crypto.randomUUID(),
+    id: newId(),
     age: previousStep?.age ?? 1,
     villagerCount: previousStep?.villagerCount ?? 0,
     villagerCountManual: false,
@@ -58,11 +59,11 @@ export function createEmptyStep(previousStep?: BuildStep): BuildStep {
 export function cloneStep(step: BuildStep): BuildStep {
   return {
     ...step,
-    id: crypto.randomUUID(),
+    id: newId(),
     resources: { ...step.resources },
-    notes: step.notes.map((n) => ({ id: crypto.randomUUID(), text: n.text })),
+    notes: step.notes.map((n) => ({ id: newId(), text: n.text })),
     tags: step.tags?.map((t) => ({
-      id: crypto.randomUUID(),
+      id: newId(),
       unit: t.unit,
       location: t.location,
     })),
@@ -73,7 +74,7 @@ export function cloneStep(step: BuildStep): BuildStep {
 export function createEmptyBuildOrder(civId: string): BuildOrder {
   const now = Date.now();
   return {
-    id: crypto.randomUUID(),
+    id: newId(),
     name: "Untitled build",
     civilization: civId,
     matchup: "",

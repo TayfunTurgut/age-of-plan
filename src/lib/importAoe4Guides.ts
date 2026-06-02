@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { inferVillagerCountFields } from "@/lib/buildOrder";
+import { newId } from "@/lib/id";
 import { parseTime } from "@/lib/time";
 import type { BuildOrder, BuildStep, Resources } from "@/types/buildOrder";
 import {
@@ -193,10 +194,10 @@ function mapStep(raw: RawAoe4Step, fallbackAge: 1 | 2 | 3 | 4): BuildStep {
   );
 
   const text = htmlToText(String(raw.description ?? ""));
-  const notes = text ? [{ id: crypto.randomUUID(), text }] : [];
+  const notes = text ? [{ id: newId(), text }] : [];
 
   return {
-    id: crypto.randomUUID(),
+    id: newId(),
     age,
     villagerCount,
     villagerCountManual,
@@ -271,7 +272,7 @@ export function parseAoe4GuidesPayload(payload: unknown, id: string): BuildOrder
 
   const now = Date.now();
   return {
-    id: crypto.randomUUID(),
+    id: newId(),
     name: String(data.title ?? data.name ?? "Imported build"),
     civilization: mapCiv(data.civilization ?? data.civ),
     author: String(data.author ?? data.user?.name ?? ""),
