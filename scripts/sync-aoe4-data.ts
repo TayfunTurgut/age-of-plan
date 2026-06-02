@@ -14,6 +14,12 @@
  *
  * The transform/emit/audit helpers below are pure and unit-tested; only main()
  * touches the network or filesystem. main() runs only when executed directly.
+ *
+ * NOTE: the path-migration map is derived from the legacy rts-overlay mirror at
+ * OLD_MIRROR (public/assets/aoe4), which this repo does not ship — a fresh run
+ * regenerates only the *static* migrations. The full committed pathMigration.ts
+ * was produced from that mirror during the initial port; restore the legacy
+ * mirror before re-running if you need to rebuild it whole.
  */
 import {
   copyFileSync,
