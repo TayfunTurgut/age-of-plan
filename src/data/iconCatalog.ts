@@ -35,7 +35,14 @@ export const ICON_CATALOG: readonly IconEntry[] = Object.freeze([
 ]);
 
 /** Catalog entries available to a given civ. Aliases carry no civ restriction
- *  and therefore appear for every civ. */
+ *  and therefore appear for every civ. Results are memoized per civ since the
+ *  catalog is immutable and this is called on every autocomplete keystroke. */
+const iconsForCivCache = new Map<string, IconEntry[]>();
+
 export function getIconsForCiv(civId: string): IconEntry[] {
-  return ICON_CATALOG.filter((e) => !e.civs || e.civs.includes(civId));
+  const cached = iconsForCivCache.get(civId);
+  if (cached) return cached;
+  const result = ICON_CATALOG.filter((e) => !e.civs || e.civs.includes(civId));
+  iconsForCivCache.set(civId, result);
+  return result;
 }

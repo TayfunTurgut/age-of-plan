@@ -56,6 +56,7 @@ const CIV_CODE_MAP: Record<string, string> = {
   JAP: "japanese",
   AYY: "ayyubids",
   ZXL: "zhu-xi",
+  JIN: "jin",
   JDA: "jeanne-darc",
   DRA: "order-of-the-dragon",
   OOD: "order-of-the-dragon",

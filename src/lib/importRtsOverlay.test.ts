@@ -14,6 +14,7 @@ describe("normalizeCivId", () => {
     expect(normalizeCivId("Holy Roman Empire")).toBe("hre");
     expect(normalizeCivId("fr")).toBe("french");
     expect(normalizeCivId("Delhi Sultanate")).toBe("delhi");
+    expect(normalizeCivId("Jin Dynasty")).toBe("jin");
   });
 
   it("is diacritic- and apostrophe-insensitive", () => {
@@ -31,6 +32,10 @@ describe("civIdToDisplayName", () => {
   it("maps ids to display names and passes unknown ids through", () => {
     expect(civIdToDisplayName("byzantines")).toBe("Byzantines");
     expect(civIdToDisplayName("mystery")).toBe("mystery");
+  });
+
+  it("round-trips the Jin Dynasty variant civ", () => {
+    expect(normalizeCivId(civIdToDisplayName("jin"))).toBe("jin");
   });
 });
 

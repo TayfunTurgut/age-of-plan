@@ -1,15 +1,18 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "@playwright/test";
 
+import { CIV_DATA } from "../../src/data/generated/civData";
+
 test("home renders the civilization picker grid", async ({ page }) => {
   await page.goto("/");
   await expect(
     page.getByRole("heading", { level: 1, name: "Age of Plan" }),
   ).toBeVisible();
 
-  // 22 civilizations, each linking to its detail page.
+  // One link per civilization, each pointing at its detail page. Sourced from
+  // the data so adding a civ (e.g. Jin) doesn't silently break this assertion.
   const civLinks = page.locator('a[href^="/civ/"]');
-  await expect(civLinks).toHaveCount(22);
+  await expect(civLinks).toHaveCount(CIV_DATA.length);
 
   await expect(page.getByRole("link", { name: "Browse the library" })).toBeVisible();
 });

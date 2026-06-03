@@ -82,7 +82,7 @@ export default function Index() {
             href="https://aoe4guides.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary underline-offset-2 hover:underline focus-ring"
+            className="text-primary underline underline-offset-2 focus-ring"
           >
             aoe4guides.com
           </a>{" "}
@@ -95,7 +95,7 @@ export default function Index() {
           <button
             type="button"
             onClick={() => setImportOpen(true)}
-            className="text-primary underline-offset-2 hover:underline focus-ring"
+            className="text-primary underline underline-offset-2 focus-ring"
           >
             import builds from aoe4guides
           </button>{" "}

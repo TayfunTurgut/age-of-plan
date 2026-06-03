@@ -78,9 +78,9 @@ test("typing {{ opens the icon picker and inserts a token", async ({ page }) => 
   await expect(page.getByRole("listbox", { name: "Icon picker" })).toBeVisible();
   await note.press("Enter");
 
-  await expect(note).toHaveValue(/\{\{resources\/food\.png\}\}/);
+  await expect(note).toHaveValue(/\{\{resources\/food\.webp\}\}/);
   // The inline note preview renders the icon (h-6, vs the h-5 resource pills).
   await expect(
-    page.locator('img.h-6[src="/aoe4/resources/food.png"]'),
+    page.locator('img.h-6[src="/aoe4/resources/food.webp"]'),
   ).toBeVisible();
 });
