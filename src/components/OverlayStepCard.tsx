@@ -91,6 +91,21 @@ function CompactResourceChip({
   );
 }
 
+/** Age badge icon; hides itself on load failure via state (no DOM mutation). */
+function AgeIcon({ age }: { age: 1 | 2 | 3 | 4 }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <img
+      src={getAssetUrl(AGE_ICON[age])}
+      alt={AGE_LABELS[age]}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="h-5 w-5 object-contain"
+    />
+  );
+}
+
 type Props = {
   step: BuildStep | undefined;
   civ: Civ | undefined;
@@ -133,15 +148,7 @@ export default function OverlayStepCard({
       <div className="flex items-center gap-2">
         <TouchableTooltip content={AGE_LABELS[step.age]} side="bottom">
           <span className="inline-flex">
-            <img
-              src={getAssetUrl(AGE_ICON[step.age])}
-              alt={AGE_LABELS[step.age]}
-              loading="lazy"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = "none";
-              }}
-              className="h-5 w-5 object-contain"
-            />
+            <AgeIcon age={step.age} />
           </span>
         </TouchableTooltip>
         <span className="text-sm text-muted-foreground">{AGE_LABELS[step.age]}</span>

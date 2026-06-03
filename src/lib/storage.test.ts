@@ -22,7 +22,7 @@ function realisticBuild(): BuildOrder {
     matchup: "vs French",
     author: "Tester",
     source: "manual",
-    description: "A {{resources/food.png}} focused opener",
+    description: "A {{resources/food.webp}} focused opener",
     createdAt: 1000,
     updatedAt: 1000,
     steps: [
@@ -36,7 +36,7 @@ function realisticBuild(): BuildOrder {
         timeSeconds: 0,
         prerequisite: "Start of game",
         notes: [
-          { id: "n1", text: "Send all to {{resources/food.png}}" },
+          { id: "n1", text: "Send all to {{resources/food.webp}}" },
           { id: "n2", text: "Scout the map" },
         ],
         tags: [{ id: "t1", unit: "Scout", location: "Scouting (Map)" }],

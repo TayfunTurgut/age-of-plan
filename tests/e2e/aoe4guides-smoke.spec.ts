@@ -4,7 +4,8 @@ import { test, expect } from "@playwright/test";
  * Live upstream-drift canary — hits the REAL aoe4guides.com API. Tagged
  * @aoe4guides-smoke so the default `test:e2e` run excludes it; run on demand
  * with `bun run test:e2e:aoe4guides-smoke`. Failures usually mean aoe4guides
- * changed its API/asset paths (refresh PATH_MIGRATION / civ-code map).
+ * changed its API/asset paths — re-run `bun run sync-data` against an updated
+ * aoe4guides clone and refresh the civ-code maps in importAoe4Guides.ts.
  */
 test("@aoe4guides-smoke imports a live aoe4guides build", async ({ page }) => {
   test.setTimeout(45_000);

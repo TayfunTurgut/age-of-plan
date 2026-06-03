@@ -11,8 +11,10 @@
  * Point AOE4GUIDES_REPO at a clone of the aoe4guides repository (default
  * `../aoe4-guides`). Run via:  bun run sync-data
  *
- * Idempotent: existing non-empty asset files are skipped. Every shipped icon
- * comes from aoe4guides — there is no legacy/back-compat asset set.
+ * Re-runnable: existing non-empty asset files are skipped (copies are
+ * idempotent), but the generated `src/data/generated/*.ts` files and the asset
+ * manifest are always rewritten. Every shipped icon comes from aoe4guides —
+ * there is no legacy/back-compat asset set.
  *
  * The transform/emit helpers below are pure and unit-tested; only main() touches
  * the filesystem. main() runs only when executed directly.
@@ -458,8 +460,41 @@ const fileNonEmpty = (path: string): boolean => {
 };
 
 function readJsonArray(path: string): Aoe4GuidesEntity[] {
-  const data = JSON.parse(readFileSync(path, "utf8"));
+  let raw: string;
+  try {
+    raw = readFileSync(path, "utf8");
+  } catch (err) {
+    throw new Error(`Failed to read aoe4guides data file ${path}: ${(err as Error).message}`, {
+      cause: err,
+    });
+  }
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`Failed to parse JSON in ${path}: ${(err as Error).message}`, { cause: err });
+  }
   return Array.isArray(data) ? (data.filter(Boolean) as Aoe4GuidesEntity[]) : [];
+}
+
+/** Guard against the civ tables drifting apart (the bug that let Jin ship
+ *  without a CODE_TO_CIV / display-name entry). Fails loudly on mismatch. */
+function assertCivTablesConsistent(): void {
+  const problems: string[] = [];
+  for (const meta of CIV_META) {
+    if (CODE_TO_CIV[meta.code] !== meta.id) {
+      problems.push(`CIV_META "${meta.id}" (code "${meta.code}") has no matching CODE_TO_CIV entry`);
+    }
+  }
+  const metaIds = new Set(CIV_META.map((m) => m.id));
+  for (const [code, id] of Object.entries(CODE_TO_CIV)) {
+    if (!metaIds.has(id)) {
+      problems.push(`CODE_TO_CIV maps "${code}" -> "${id}", which is absent from CIV_META`);
+    }
+  }
+  if (problems.length) {
+    throw new Error(`Civ tables are inconsistent:\n  - ${problems.join("\n  - ")}`);
+  }
 }
 
 type Copy = { src: string; dst: string };
@@ -487,6 +522,8 @@ function copyAll(copies: Copy[]): { skipped: number; copied: number; failed: num
 }
 
 async function main() {
+  assertCivTablesConsistent();
+
   if (!existsSync(AG_JSON)) {
     throw new Error(
       `aoe4guides data not found at ${AG_JSON}. Clone https://github.com/aoe4guides/aoe4-guides ` +
