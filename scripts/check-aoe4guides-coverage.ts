@@ -4,8 +4,8 @@
  *
  * Fetches a build per civ from the live aoe4guides API and reports any
  * `<img src>` that maps to neither an icon token nor a title/alt fallback (it
- * would render as nothing), plus any civ-code drift. Run when refreshing
- * PATH_MIGRATION / AOE4GUIDES_ALIASES:  bun run scripts/check-aoe4guides-coverage.ts
+ * would render as nothing), plus any civ-code drift. Run when refreshing the
+ * AOE4GUIDES_ALIASES overrides:  bun run scripts/check-aoe4guides-coverage.ts
  *
  * The HTML-scanning helpers are pure and unit-tested; only main() hits the network.
  */

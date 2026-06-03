@@ -55,7 +55,7 @@ function normalizeKey(s: string): string {
     .toLowerCase();
 }
 
-/** Common aliases for each civ, plus aoe4world 2-letter codes. Keys are normalized. */
+/** Common aliases for each civ, plus legacy 2-letter codes. Keys are normalized. */
 const CIV_ALIASES: Record<string, string> = {
   english: "english",
   french: "french",
@@ -97,7 +97,7 @@ const CIV_ALIASES: Record<string, string> = {
   tughlaq: "tughluqid",
   "tughlaq dynasty": "tughluqid",
 
-  // aoe4world 2-letter civ codes — recognized so imports that smuggle in raw
+  // Legacy 2-letter civ codes — recognized so imports that smuggle in raw
   // codes (older aoe4guides exports) still resolve.
   ab: "abbasid",
   ay: "ayyubids",

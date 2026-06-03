@@ -1,34 +1,43 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  type Aoe4WorldEntity,
+  type Aoe4GuidesEntity,
+  type SourcedEntity,
+  type SourceFile,
   buildCivData,
   buildIconCatalog,
-  buildPathMigration,
   civsForExtraResource,
+  deriveUnique,
   emitCivDataTs,
   emitIconsTs,
-  emitMigrationTs,
-  groupByCiv,
-  iconLocalPath,
+  imgSrcToPath,
+  mapCivCodes,
+  normalizeAge,
   slugify,
   stripAge,
 } from "./sync-aoe4-data";
 import { collectImgs, findUnmappedImgs } from "./check-aoe4guides-coverage";
 
-function entity(over: Partial<Aoe4WorldEntity>): Aoe4WorldEntity {
+function entity(over: Partial<Aoe4GuidesEntity>): Aoe4GuidesEntity {
   return {
-    id: "x",
-    baseId: "x",
-    type: "unit",
-    name: "Thing",
+    title: "Thing",
     age: 1,
-    civs: [],
-    unique: false,
-    icon: "https://data.aoe4world.com/images/units/thing.png",
+    imgSrc: "/assets/pictures/unit_cavalry/thing.webp",
+    civ: ["ENG"],
+    class: "military",
+    type: "unit",
     ...over,
   };
 }
+const sourced = (e: Aoe4GuidesEntity, source: SourceFile = "unitMilitary"): SourcedEntity => ({
+  entity: e,
+  source,
+});
+
+const ALL_CODES = [
+  "ABB", "AYY", "BYZ", "CHI", "DEL", "DRA", "ENG", "FRE", "GOH", "HOL", "HRE", "JAP",
+  "JDA", "JIN", "KTE", "MAC", "MAL", "MON", "OTT", "RUS", "SEN", "TUG", "ZXL",
+];
 
 describe("slug helpers", () => {
   it("slugify strips non-alphanumerics and lowercases", () => {
@@ -40,6 +49,50 @@ describe("slug helpers", () => {
   });
 });
 
+describe("normalizeAge", () => {
+  it("coerces numeric strings to 1-4 and rejects out-of-range / missing", () => {
+    expect(normalizeAge("2")).toBe(2);
+    expect(normalizeAge(4)).toBe(4);
+    expect(normalizeAge(0)).toBeUndefined();
+    expect(normalizeAge(5)).toBeUndefined();
+    expect(normalizeAge(undefined)).toBeUndefined();
+  });
+});
+
+describe("imgSrcToPath", () => {
+  it("rewrites an aoe4guides imgSrc to an images/<category>/<file> path", () => {
+    expect(imgSrcToPath("/assets/pictures/unit_cavalry/scout.webp")).toBe(
+      "images/unit_cavalry/scout.webp",
+    );
+    expect(imgSrcToPath("https://aoe4guides.com/assets/pictures/age/age_1.webp")).toBe(
+      "images/age/age_1.webp",
+    );
+    expect(imgSrcToPath("")).toBeNull();
+    expect(imgSrcToPath("/other/x.webp")).toBeNull();
+  });
+});
+
+describe("mapCivCodes", () => {
+  it("maps 3-letter codes to ids, dedups, and drops unknowns", () => {
+    expect(mapCivCodes(["ENG", "HOL", "ZZ"])).toEqual(["english", "house-of-lancaster"]);
+    expect(mapCivCodes(["eng", "ENG"])).toEqual(["english"]);
+  });
+});
+
+describe("deriveUnique", () => {
+  it("forces heroes / landmarks / abilities unique and eco units non-unique", () => {
+    expect(deriveUnique(entity({}), "unitHero")).toBe(true);
+    expect(deriveUnique(entity({}), "landmarks")).toBe(true);
+    expect(deriveUnique(entity({}), "abilityHero")).toBe(true);
+    expect(deriveUnique(entity({ civ: ["DEL"] }), "unitEco")).toBe(false);
+  });
+  it("treats single-base-civ items as unique (variants collapse onto parents)", () => {
+    expect(deriveUnique(entity({ civ: ["ENG", "HOL"] }), "unitMilitary")).toBe(true);
+    expect(deriveUnique(entity({ civ: ["ENG", "HRE"] }), "unitMilitary")).toBe(false);
+    expect(deriveUnique(entity({ civ: ["JIN"] }), "unitMilitary")).toBe(true);
+  });
+});
+
 describe("civsForExtraResource", () => {
   it("derives civ restrictions from EXTRA_RESOURCES_BY_CIV", () => {
     expect(civsForExtraResource("oliveOil")).toEqual(["ayyubids", "byzantines"]);
@@ -48,44 +101,30 @@ describe("civsForExtraResource", () => {
   });
 });
 
-describe("iconLocalPath", () => {
-  it("derives images/<kind>/<file> from the icon URL", () => {
-    expect(iconLocalPath("units", entity({ icon: "https://data.aoe4world.com/images/units/longbowman-4.png" }))).toBe(
-      "images/units/longbowman-4.png",
-    );
-    expect(iconLocalPath("units", entity({ icon: "" }))).toBeNull();
-  });
-});
-
 describe("buildIconCatalog", () => {
   it("dedups by icon path, collapses all-civ restrictions, and sorts by category", () => {
     const longbow = entity({
-      name: "Longbowman",
-      icon: "https://data.aoe4world.com/images/units/longbowman.png",
-      civs: ["en"],
-      unique: true,
+      title: "Longbowman",
+      imgSrc: "/assets/pictures/unit_ranged/longbowman.webp",
+      civ: ["ENG", "HOL"],
       age: 2,
     });
-    // Same icon path, second civ -> should merge into one entry with both civs.
-    const longbow2 = entity({ ...longbow, civs: ["hl"] });
+    // Same icon path, listed again -> merges into one entry.
+    const longbow2 = entity({ ...longbow, civ: ["ENG"] });
     // A spearman shared by every civ -> restriction collapses to undefined.
-    const allCivs = [
-      "ab", "ay", "by", "ch", "de", "en", "fr", "gol", "hl", "hr", "ja",
-      "je", "kt", "ma", "mac", "mo", "od", "ot", "ru", "sen", "tug", "zx",
-    ];
     const spear = entity({
-      name: "Spearman",
-      icon: "https://data.aoe4world.com/images/units/spearman.png",
-      civs: allCivs,
+      title: "Spearman",
+      imgSrc: "/assets/pictures/unit_infantry/spearman.webp",
+      civ: ALL_CODES,
     });
 
-    const catalog = buildIconCatalog([longbow, longbow2, spear], [], []);
+    const catalog = buildIconCatalog([sourced(longbow), sourced(longbow2), sourced(spear)]);
 
-    const lb = catalog.find((e) => e.path === "images/units/longbowman.png");
+    const lb = catalog.find((e) => e.path === "images/unit_ranged/longbowman.webp");
     expect(lb?.civs).toEqual(["english", "house-of-lancaster"]);
     expect(lb?.unique).toBe(true);
 
-    const sp = catalog.find((e) => e.path === "images/units/spearman.png");
+    const sp = catalog.find((e) => e.path === "images/unit_infantry/spearman.webp");
     expect(sp?.civs).toBeUndefined();
 
     // Static resources + ages come before units (category order).
@@ -97,55 +136,42 @@ describe("buildIconCatalog", () => {
 
 describe("buildCivData", () => {
   it("derives unique units, landmarks, and a tagline per civ", () => {
-    const king = entity({ name: "King", civs: ["en"], unique: true, age: 1 });
-    const longbow = entity({ name: "Longbowman", civs: ["en"], unique: true, age: 2 });
-    const abbey = entity({
-      type: "building",
-      name: "Abbey of Kings",
-      civs: ["en"],
-      classes: ["landmark"],
-      age: 1,
-    });
-    const english = buildCivData(
-      groupByCiv([king, longbow]),
-      groupByCiv([abbey]),
-    ).find((c) => c.id === "english");
+    const longbow = sourced(entity({ title: "Longbowman", civ: ["ENG"], age: 2 }), "unitMilitary");
+    const king = sourced(entity({ title: "King", civ: ["ENG"], age: 1 }), "unitMilitary");
+    const abbey = sourced(
+      entity({ title: "Abbey of Kings", civ: ["ENG"], type: "building", class: "landmark", age: 1 }),
+      "landmarks",
+    );
+    // Villagers are economic — must NOT count as unique units.
+    const villager = sourced(entity({ title: "Villager", civ: ["ENG"], age: 1 }), "unitEco");
+
+    const english = buildCivData([longbow, king, abbey, villager]).find((c) => c.id === "english");
 
     expect(english?.uniqueUnits).toEqual(["King", "Longbowman"]);
     expect(english?.landmarks).toEqual(["Abbey of Kings"]);
     expect(english?.tagline).toBe("King • Longbowman • Abbey of Kings");
-    expect(english?.code).toBe("en");
   });
 
-  it("produces all 22 civs", () => {
-    expect(buildCivData(new Map(), new Map())).toHaveLength(22);
-  });
-});
-
-describe("buildPathMigration", () => {
-  it("maps old kebab paths to new image paths by basename slug", () => {
-    const catalog = [
-      { path: "images/units/longbowman-4.png", name: "Longbowman", category: "Unit" as const },
-    ];
-    const out = buildPathMigration(catalog, ["unit-english/longbowman-4.webp"]);
-    expect(out["unit-english/longbowman-4.webp"]).toBe("images/units/longbowman-4.png");
-    // Static relocations are always present.
-    expect(out["age/age-1.webp"]).toBe("ages/age_1.webp");
-    expect(out["civilization-flag/english.webp"]).toBe("flags/english.png");
+  it("produces all 23 civs including Jin Dynasty as a Chinese variant", () => {
+    const civs = buildCivData([]);
+    expect(civs).toHaveLength(23);
+    const jin = civs.find((c) => c.id === "jin");
+    expect(jin?.name).toBe("Jin Dynasty");
+    expect(jin?.variantOf).toBe("chinese");
+    expect(jin?.flagPath).toBe("flags/jin.webp");
   });
 });
 
 describe("emitters", () => {
   it("emit valid generated-file headers and content", () => {
-    expect(emitIconsTs([{ path: "resources/food.png", name: "Food", category: "Resource" }])).toContain(
+    expect(emitIconsTs([{ path: "resources/food.webp", name: "Food", category: "Resource" }])).toContain(
       "export const ICON_CATALOG",
     );
-    expect(
-      emitCivDataTs([
-        { id: "english", name: "English", code: "en", flagPath: "flags/english.png", uniqueUnits: [], landmarks: [], tagline: "x" },
-      ]),
-    ).toContain("export const CIV_DATA");
-    expect(emitMigrationTs({ "a/b.webp": "images/units/b.png" })).toContain("PATH_MIGRATION");
+    const civTs = emitCivDataTs([
+      { id: "english", name: "English", flagPath: "flags/english.webp", uniqueUnits: [], landmarks: [], tagline: "x" },
+    ]);
+    expect(civTs).toContain("export const CIV_DATA");
+    expect(civTs).not.toContain("code:");
   });
 });
 
