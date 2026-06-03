@@ -3,9 +3,7 @@ import { z } from "zod";
 import { computeVillagerCount } from "@/lib/buildOrder";
 import { isBrowser } from "@/lib/env";
 import { newId } from "@/lib/id";
-import { NOTE_TOKEN_RE } from "@/lib/noteToken";
 import type { BuildOrder } from "@/types/buildOrder";
-import { PATH_MIGRATION } from "@/data/generated/pathMigration";
 
 /**
  * localStorage abstraction for build orders — the ONLY module that touches
@@ -130,22 +128,7 @@ function migrateStep(stepRaw: unknown): { step: unknown; mutated: boolean } {
     step = { ...step, notes: syntax.notes };
   }
 
-  // 3. Icon-token PATHS: old kebab/rts-overlay layout → new aoe4world paths.
-  const paths = transformNoteTexts(
-    step.notes,
-    (t) => t.includes("{{"),
-    (t) =>
-      t.replace(NOTE_TOKEN_RE, (whole: string, oldPath: string) => {
-        const newPath = PATH_MIGRATION[oldPath];
-        return newPath ? `{{${newPath}}}` : whole;
-      }),
-  );
-  if (paths?.touched) {
-    mutated = true;
-    step = { ...step, notes: paths.notes };
-  }
-
-  // 4. Default villagerCountManual when missing. Preserve hand-tuned counts
+  // 3. Default villagerCountManual when missing. Preserve hand-tuned counts
   //    from the pre-`villagerCountManual` schema by inferring `manual` when the
   //    stored count diverges from the resource sum — otherwise the recompute
   //    below would silently overwrite a user's manual count.
@@ -160,7 +143,7 @@ function migrateStep(stepRaw: unknown): { step: unknown; mutated: boolean } {
     step = { ...step, villagerCountManual: inferredManual };
   }
 
-  // 5. In auto mode, recompute villagerCount to match the resource breakdown.
+  // 4. In auto mode, recompute villagerCount to match the resource breakdown.
   if (step.villagerCountManual === false && resources.success) {
     const sum = computeVillagerCount(resources.data);
     if (step.villagerCount !== sum) {

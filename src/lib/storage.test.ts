@@ -10,7 +10,6 @@ import {
   StorageQuotaError,
 } from "@/lib/storage";
 import type { BuildOrder } from "@/types/buildOrder";
-import { PATH_MIGRATION } from "@/data/generated/pathMigration";
 
 const KEY_PREFIX = "aoe4bo:bo:";
 
@@ -160,30 +159,11 @@ describe("migration", () => {
           villagerCount: 0,
           villagerCountManual: false,
           resources: { food: 0, wood: 0, gold: 0, stone: 0, builder: 0 },
-          notes: [{ id: "n", text: "go @resources/food.png@ now" }],
+          notes: [{ id: "n", text: "go @resources/food.webp@ now" }],
         },
       ]),
     );
-    expect(bo!.steps[0].notes[0].text).toBe("go {{resources/food.png}} now");
-  });
-
-  it("migrates legacy token paths via PATH_MIGRATION", () => {
-    const entry = Object.entries(PATH_MIGRATION)[0];
-    expect(entry).toBeTruthy();
-    const [oldPath, newPath] = entry;
-    const bo = readMigrated(
-      base([
-        {
-          id: "s",
-          age: 1,
-          villagerCount: 0,
-          villagerCountManual: false,
-          resources: { food: 0, wood: 0, gold: 0, stone: 0, builder: 0 },
-          notes: [{ id: "n", text: `icon {{${oldPath}}} here` }],
-        },
-      ]),
-    );
-    expect(bo!.steps[0].notes[0].text).toBe(`icon {{${newPath}}} here`);
+    expect(bo!.steps[0].notes[0].text).toBe("go {{resources/food.webp}} now");
   });
 
   it("infers villagerCountManual=true when a legacy count diverges from the sum", () => {

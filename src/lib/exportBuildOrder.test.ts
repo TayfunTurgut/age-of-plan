@@ -23,7 +23,7 @@ function build(): BuildOrder {
         villagerCountManual: false,
         resources: { food: 6, wood: 2, gold: 0, stone: 0, builder: 0, oliveOil: 0 },
         timeSeconds: 65,
-        notes: [{ id: "n1", text: "Send to {{resources/food.png}}" }],
+        notes: [{ id: "n1", text: "Send to {{resources/food.webp}}" }],
       },
     ],
   };
@@ -37,7 +37,7 @@ describe("toRtsOverlayPayload", () => {
   it("formats time as m:ss and converts {{tokens}} to @tokens@", () => {
     const payload = toRtsOverlayPayload(build());
     expect(payload.build_order[0].time).toBe("1:05");
-    expect(payload.build_order[0].notes[0]).toBe("Send to @resources/food.png@");
+    expect(payload.build_order[0].notes[0]).toBe("Send to @resources/food.webp@");
     expect(payload.build_order[0].villager_count).toBe(8);
     expect(payload.build_order[0].resources.food).toBe(6);
   });

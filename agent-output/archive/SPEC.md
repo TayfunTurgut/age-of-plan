@@ -197,8 +197,8 @@ Base + variants (ids used in routes/sitemap):
 `jeanne-darc`, `order-of-the-dragon`, `knights-templar`, `house-of-lancaster`,
 `golden-horde`, `macedonian`, `sengoku-daimyo`, `tughluqid`.
 
-Per-civ data, the icon catalog, and aoe4guides path migration are generated from
-aoe4world data (`src/data/generated/*`) by a sync script and should not be
+Per-civ data, the icon catalog, and path migration are generated from
+aoe4guides data (`src/data/generated/*`) by a sync script and should not be
 hand-edited. Civ-specific extra resources: olive oil (Byzantines, Ayyubids),
 silver (Macedonian Dynasty).
 

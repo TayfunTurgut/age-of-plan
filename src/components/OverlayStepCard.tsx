@@ -48,13 +48,13 @@ const RESOURCE_ORDER: ResourceKey[] = [
 ];
 
 const RESOURCE_META: Record<ResourceKey, { icon: string; label: string }> = {
-  food: { icon: "resources/food.png", label: "Food" },
-  wood: { icon: "resources/wood.png", label: "Wood" },
-  gold: { icon: "resources/gold.png", label: "Gold" },
-  stone: { icon: "resources/stone.png", label: "Stone" },
+  food: { icon: "resources/food.webp", label: "Food" },
+  wood: { icon: "resources/wood.webp", label: "Wood" },
+  gold: { icon: "resources/gold.webp", label: "Gold" },
+  stone: { icon: "resources/stone.webp", label: "Stone" },
   builder: { icon: "general/build.webp", label: "Builders" },
-  oliveOil: { icon: "resources/oliveoil.png", label: "Olive Oil" },
-  silver: { icon: "resources/silver.png", label: "Silver" },
+  oliveOil: { icon: "resources/oliveoil.webp", label: "Olive Oil" },
+  silver: { icon: "resources/silver.webp", label: "Silver" },
 };
 
 function CompactResourceChip({
