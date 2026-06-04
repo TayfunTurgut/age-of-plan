@@ -14,7 +14,7 @@ export type Civ = {
   extraResources: readonly ResourceKey[];
 };
 
-/** All 12 base civs + 10 variants, derived from generated aoe4world data. */
+/** All 12 base civs + 11 variants, derived from generated aoe4guides data. */
 export const CIVS: readonly Civ[] = CIV_DATA.map((c) => ({
   id: c.id,
   name: c.name,

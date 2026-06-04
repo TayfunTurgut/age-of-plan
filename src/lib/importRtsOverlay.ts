@@ -32,6 +32,7 @@ export const CIV_DISPLAY_NAMES: Record<string, string> = {
   japanese: "Japanese",
   ayyubids: "Ayyubids",
   "zhu-xi": "Zhu Xi's Legacy",
+  jin: "Jin Dynasty",
   "jeanne-darc": "Jeanne d'Arc",
   "order-of-the-dragon": "Order of the Dragon",
   "knights-templar": "Knights Templar",
@@ -55,7 +56,7 @@ function normalizeKey(s: string): string {
     .toLowerCase();
 }
 
-/** Common aliases for each civ, plus aoe4world 2-letter codes. Keys are normalized. */
+/** Common aliases for each civ, plus legacy 2-letter codes. Keys are normalized. */
 const CIV_ALIASES: Record<string, string> = {
   english: "english",
   french: "french",
@@ -77,6 +78,8 @@ const CIV_ALIASES: Record<string, string> = {
   "zhu xis legacy": "zhu-xi",
   "zhu xi legacy": "zhu-xi",
   zhuxi: "zhu-xi",
+  jin: "jin",
+  "jin dynasty": "jin",
   jeanne: "jeanne-darc",
   "jeanne darc": "jeanne-darc",
   "jeanne d arc": "jeanne-darc",
@@ -97,7 +100,7 @@ const CIV_ALIASES: Record<string, string> = {
   tughlaq: "tughluqid",
   "tughlaq dynasty": "tughluqid",
 
-  // aoe4world 2-letter civ codes — recognized so imports that smuggle in raw
+  // Legacy 2-letter civ codes — recognized so imports that smuggle in raw
   // codes (older aoe4guides exports) still resolve.
   ab: "abbasid",
   ay: "ayyubids",

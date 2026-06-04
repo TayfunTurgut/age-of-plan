@@ -21,8 +21,8 @@ import { normalizeCivId } from "./importRtsOverlay";
  *   - `description` is an HTML string with `<img>` icons + `<br>`s.
  *   - `time` is "m:ss"; `civ` is a 3-letter code like "ENG".
  *
- * This module is the pure parse layer. The network `fetchAoe4GuidesBuild`
- * wrapper (and its react-query consumer) lands in M9 with the import modal.
+ * Pure parse helpers live up top; `fetchAoe4GuidesBuild` (the network wrapper)
+ * is at the bottom and is consumed by ImportModal via react-query.
  */
 
 /** Match a 20-char Firestore-style document id. */
@@ -56,6 +56,7 @@ const CIV_CODE_MAP: Record<string, string> = {
   JAP: "japanese",
   AYY: "ayyubids",
   ZXL: "zhu-xi",
+  JIN: "jin",
   JDA: "jeanne-darc",
   DRA: "order-of-the-dragon",
   OOD: "order-of-the-dragon",

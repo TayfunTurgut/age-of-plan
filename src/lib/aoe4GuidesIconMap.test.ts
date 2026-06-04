@@ -6,37 +6,34 @@ import {
   capitalizeAoe4GuidesBasename,
   substituteAoe4GuidesBuildKeyword,
 } from "@/lib/aoe4GuidesIconMap";
-import { PATH_MIGRATION } from "@/data/generated/pathMigration";
+import { ICON_CATALOG } from "@/data/generated/icons";
 
-const [legacyWebp, internalPath] = Object.entries(PATH_MIGRATION).find(([k]) =>
-  k.endsWith(".webp"),
-)!;
+// A real catalog asset under images/ — aoe4guides is our source of truth, so its
+// `<category>/<file>` maps straight to `images/<category>/<file>`.
+const samplePath = ICON_CATALOG.find((e) => e.path.startsWith("images/"))!.path;
+const sampleRest = samplePath.slice("images/".length);
 
 describe("aoe4GuidesSrcToToken", () => {
-  it("maps a known PATH_MIGRATION asset (relative and absolute)", () => {
-    expect(aoe4GuidesSrcToToken(`/assets/pictures/${legacyWebp}`)).toBe(
-      `{{${internalPath}}}`,
-    );
+  it("maps a current catalog asset (relative and absolute)", () => {
+    expect(aoe4GuidesSrcToToken(`/assets/pictures/${sampleRest}`)).toBe(`{{${samplePath}}}`);
     expect(
-      aoe4GuidesSrcToToken(`https://aoe4guides.com/assets/pictures/${legacyWebp}`),
-    ).toBe(`{{${internalPath}}}`);
+      aoe4GuidesSrcToToken(`https://aoe4guides.com/assets/pictures/${sampleRest}`),
+    ).toBe(`{{${samplePath}}}`);
   });
 
   it("falls back to the alternate extension (.png ↔ .webp)", () => {
-    const pngForm = `${legacyWebp.slice(0, -5)}.png`;
-    expect(aoe4GuidesSrcToToken(`/assets/pictures/${pngForm}`)).toBe(
-      `{{${internalPath}}}`,
+    const pngRest = sampleRest.replace(/\.webp$/, ".png");
+    expect(aoe4GuidesSrcToToken(`/assets/pictures/${pngRest}`)).toBe(`{{${samplePath}}}`);
+  });
+
+  it("normalizes underscores to hyphens for alias lookups", () => {
+    // aoe4guides serves `resource/resource_food.webp`; alias key is hyphenated.
+    expect(aoe4GuidesSrcToToken("/assets/pictures/resource/resource_food.webp")).toBe(
+      "{{resources/food.webp}}",
     );
   });
 
-  it("normalizes underscores to hyphens before lookup", () => {
-    const underscored = legacyWebp.replace(/-/g, "_");
-    expect(aoe4GuidesSrcToToken(`/assets/pictures/${underscored}`)).toBe(
-      `{{${internalPath}}}`,
-    );
-  });
-
-  it("applies hand overrides ahead of PATH_MIGRATION", () => {
+  it("applies hand overrides for UI markers", () => {
     expect(aoe4GuidesSrcToToken("/assets/pictures/resource/rally.webp")).toBe(
       "{{general/rally.webp}}",
     );
@@ -45,14 +42,13 @@ describe("aoe4GuidesSrcToToken", () => {
   it("maps civilization flags by 3-letter code", () => {
     expect(
       aoe4GuidesSrcToToken("/assets/pictures/civilization-flag/goh.webp"),
-    ).toBe("{{flags/golden-horde.png}}");
+    ).toBe("{{flags/golden-horde.webp}}");
   });
 
   it("collapses per-civ villager glyphs onto the generic villager icon", () => {
-    const generic = PATH_MIGRATION["unit-worker/villager.webp"];
     expect(
       aoe4GuidesSrcToToken("/assets/pictures/unit-worker/villager-french.webp"),
-    ).toBe(`{{${generic}}}`);
+    ).toBe("{{images/unit_worker/villager.webp}}");
   });
 
   it("returns null for unmapped or non-aoe4guides sources", () => {

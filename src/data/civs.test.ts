@@ -7,20 +7,25 @@ const EXPECTED_IDS = [
   "english", "french", "hre", "mongols", "rus", "chinese", "delhi", "abbasid",
   "ottomans", "malians", "byzantines", "japanese", "ayyubids", "zhu-xi",
   "jeanne-darc", "order-of-the-dragon", "knights-templar", "house-of-lancaster",
-  "golden-horde", "macedonian", "sengoku-daimyo", "tughluqid",
+  "golden-horde", "macedonian", "sengoku-daimyo", "tughluqid", "jin",
 ];
 
 describe("CIVS", () => {
-  it("contains exactly 22 civilizations matching the spec ids", () => {
-    expect(CIVS).toHaveLength(22);
+  it("contains exactly 23 civilizations matching the spec ids", () => {
+    expect(CIVS).toHaveLength(23);
     expect(CIVS.map((c) => c.id).sort()).toEqual([...EXPECTED_IDS].sort());
+  });
+
+  it("includes Jin Dynasty as a Chinese variant", () => {
+    expect(getCiv("jin")?.name).toBe("Jin Dynasty");
+    expect(getCiv("jin")?.variantOf).toBe("chinese");
   });
 
   it("gives every civ a name, tagline, and flag path", () => {
     for (const civ of CIVS) {
       expect(civ.name.length).toBeGreaterThan(0);
       expect(civ.tagline.length).toBeGreaterThan(0);
-      expect(civ.flagIcon).toMatch(/^flags\/.+\.png$/);
+      expect(civ.flagIcon).toMatch(/^flags\/.+\.webp$/);
     }
   });
 });

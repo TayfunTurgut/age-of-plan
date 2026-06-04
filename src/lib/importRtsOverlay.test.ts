@@ -14,6 +14,7 @@ describe("normalizeCivId", () => {
     expect(normalizeCivId("Holy Roman Empire")).toBe("hre");
     expect(normalizeCivId("fr")).toBe("french");
     expect(normalizeCivId("Delhi Sultanate")).toBe("delhi");
+    expect(normalizeCivId("Jin Dynasty")).toBe("jin");
   });
 
   it("is diacritic- and apostrophe-insensitive", () => {
@@ -32,6 +33,10 @@ describe("civIdToDisplayName", () => {
     expect(civIdToDisplayName("byzantines")).toBe("Byzantines");
     expect(civIdToDisplayName("mystery")).toBe("mystery");
   });
+
+  it("round-trips the Jin Dynasty variant civ", () => {
+    expect(normalizeCivId(civIdToDisplayName("jin"))).toBe("jin");
+  });
 });
 
 describe("parseRtsOverlayJson", () => {
@@ -45,7 +50,7 @@ describe("parseRtsOverlayJson", () => {
           villager_count: 8,
           resources: { food: 6, wood: 2, gold: 0, stone: 0, builder: 0 },
           time: "1:05",
-          notes: ["go @resources/food.png@ then scout"],
+          notes: ["go @resources/food.webp@ then scout"],
         },
       ],
     });
@@ -54,7 +59,7 @@ describe("parseRtsOverlayJson", () => {
     expect(bo.civilization).toBe("mongols");
     expect(bo.steps).toHaveLength(1);
     expect(bo.steps[0].timeSeconds).toBe(65);
-    expect(bo.steps[0].notes[0].text).toBe("go {{resources/food.png}} then scout");
+    expect(bo.steps[0].notes[0].text).toBe("go {{resources/food.webp}} then scout");
   });
 
   it("throws a specific error when build_order is missing", () => {
@@ -92,7 +97,7 @@ describe("export → RTS_Overlay → import round-trip", () => {
           villagerCountManual: false,
           resources: { food: 6, wood: 2, gold: 0, stone: 0, builder: 0 },
           timeSeconds: 125,
-          notes: [{ id: "n1", text: "build to {{resources/wood.png}}" }],
+          notes: [{ id: "n1", text: "build to {{resources/wood.webp}}" }],
         },
       ],
     };
@@ -105,7 +110,7 @@ describe("export → RTS_Overlay → import round-trip", () => {
     expect(reimported.steps[0].resources.food).toBe(6);
     expect(reimported.steps[0].villagerCount).toBe(8);
     expect(reimported.steps[0].notes[0].text).toBe(
-      "build to {{resources/wood.png}}",
+      "build to {{resources/wood.webp}}",
     );
   });
 });

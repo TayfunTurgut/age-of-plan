@@ -1,35 +1,44 @@
-import { PATH_MIGRATION } from "@/data/generated/pathMigration";
+import { ICON_CATALOG } from "@/data/generated/icons";
 
 /**
  * Maps aoe4guides.com image assets onto our internal `{{path.ext}}` icon
  * tokens. aoe4guides paths look like `/assets/pictures/<category>/<file>.webp`
- * (or absolute `https://aoe4guides.com/assets/pictures/...`). Their
- * `<category>/<file>` form differs from our legacy rts-overlay paths only in
- * `_` vs `-`, so we normalize underscores to hyphens and resolve the result
- * against PATH_MIGRATION (which maps every legacy path to its current
- * aoe4world equivalent).
+ * (or absolute `https://aoe4guides.com/assets/pictures/...`).
  *
- * Resolution is layered through `resolveKey`: hand overrides, then
- * PATH_MIGRATION, then the alternate extension. Special asset families (civ
- * flags, per-civ villager glyphs) are handled as explicit branches.
+ * Since aoe4guides is our own source of truth, our canonical icon path is simply
+ * `images/<category>/<file>.webp` — the same `<category>/<file>` with an
+ * `images/` prefix. So resolution tries, in order: hand overrides (UI markers,
+ * resource glyphs that don't live under `images/`), the direct `images/<rest>`
+ * catalog path, then the alternate extension. Civ flags and per-civ villager
+ * glyphs are explicit branches.
  */
 
+const CATALOG_PATHS = new Set(ICON_CATALOG.map((e) => e.path));
+
 /**
- * Hand-maintained overrides for paths PATH_MIGRATION misses or maps wrongly.
- * Checked before PATH_MIGRATION so individual aoe4guides quirks can be fixed
- * without regenerating the whole map (the sync script would clobber direct
- * edits to pathMigration.ts).
+ * Hand overrides for assets that don't live under `images/` (UI markers and
+ * resource glyphs). Keys are the hyphen-normalized `<category>/<file>` form.
  */
 const AOE4GUIDES_ALIASES: Record<string, string> = {
-  // aoe4guides typo: their asset is `towara-1.webp`, ours is `tawara-1.png`.
-  "technology-japanese/towara-1.webp": "images/technologies/tawara-1.png",
   // UI-marker imgs aoe4guides drops inline (often without title/alt).
   "resource/rally.webp": "general/rally.webp",
   "resource/build.webp": "general/build.webp",
+  "abilities/repair.webp": "general/build.webp",
+  // Resource glyphs.
+  "resource/resource-food.webp": "resources/food.webp",
+  "resource/resource-wood.webp": "resources/wood.webp",
+  "resource/resource-gold.webp": "resources/gold.webp",
+  "resource/resource-stone.webp": "resources/stone.webp",
+  "resource/oliveoil.webp": "resources/oliveoil.webp",
+  // Age glyphs.
+  "age/age-1.webp": "ages/age_1.webp",
+  "age/age-2.webp": "ages/age_2.webp",
+  "age/age-3.webp": "ages/age_3.webp",
+  "age/age-4.webp": "ages/age_4.webp",
 };
 
 /**
- * aoe4guides' 3-letter civ-flag basenames → our `flags/<civ>.png` ids
+ * aoe4guides' 3-letter civ-flag basenames → our `flags/<civ>.webp` ids
  * (e.g. `goh` → `golden-horde`).
  */
 const FLAG_BASENAME_TO_CIV: Record<string, string> = {
@@ -46,6 +55,7 @@ const FLAG_BASENAME_TO_CIV: Record<string, string> = {
   hre: "hre",
   jap: "japanese",
   jda: "jeanne-darc",
+  jin: "jin",
   kte: "knights-templar",
   mac: "macedonian",
   mal: "malians",
@@ -64,13 +74,12 @@ function swapExtension(key: string): string | null {
   return null;
 }
 
-/** Resolve a normalized `category/file.ext` key to an internal path, or null. */
-function resolveKey(key: string): string | null {
-  const direct = AOE4GUIDES_ALIASES[key] ?? PATH_MIGRATION[key];
-  if (direct) return direct;
-  // aoe4guides occasionally serves the same asset under the other extension.
-  const alt = swapExtension(key);
-  if (alt) return AOE4GUIDES_ALIASES[alt] ?? PATH_MIGRATION[alt] ?? null;
+/** A `<category>/<file>.ext` is one of our canonical catalog paths under images/. */
+function catalogPathFor(rawRest: string): string | null {
+  const direct = `images/${rawRest}`;
+  if (CATALOG_PATHS.has(direct)) return direct;
+  const alt = swapExtension(rawRest);
+  if (alt && CATALOG_PATHS.has(`images/${alt}`)) return `images/${alt}`;
   return null;
 }
 
@@ -87,20 +96,27 @@ export function aoe4GuidesSrcToToken(src: string | undefined | null): string | n
   if (!src || typeof src !== "string") return null;
   const m = src.match(PICTURES_RE);
   if (!m) return null;
-  const key = m[1].replace(/_/g, "-");
+  const rawRest = m[1];
+  const key = rawRest.replace(/_/g, "-");
 
-  const target = resolveKey(key);
-  if (target) return `{{${target}}}`;
+  // Hand overrides win (markers / resource glyphs that aren't under images/).
+  const override = AOE4GUIDES_ALIASES[key] ?? AOE4GUIDES_ALIASES[swapExtension(key) ?? ""];
+  if (override) return `{{${override}}}`;
 
+  // Our canonical path is images/<rest> — the common case for current assets.
+  const direct = catalogPathFor(rawRest);
+  if (direct) return `{{${direct}}}`;
+
+  // Civ flags resolve by 3-letter code.
   const flag = key.match(FLAG_RE);
   if (flag) {
     const civ = FLAG_BASENAME_TO_CIV[flag[1]];
-    if (civ) return `{{flags/${civ}.png}}`;
+    if (civ) return `{{flags/${civ}.webp}}`;
   }
 
   // aoe4guides ships per-civ villager glyphs; we collapse them onto one icon.
   if (VILLAGER_RE.test(key)) {
-    const generic = PATH_MIGRATION["unit-worker/villager.webp"];
+    const generic = catalogPathFor("unit_worker/villager.webp");
     if (generic) return `{{${generic}}}`;
   }
 

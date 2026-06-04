@@ -72,6 +72,37 @@ export default function Index() {
         })}
       </ul>
 
+      <section className="mx-auto mt-16 max-w-2xl border-t border-border pt-8 text-center">
+        <h2 className="font-display text-sm font-bold uppercase tracking-wider text-muted-foreground">
+          Powered by aoe4guides
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Age of Plan uses{" "}
+          <a
+            href="https://aoe4guides.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 focus-ring"
+          >
+            aoe4guides.com
+          </a>{" "}
+          as its primary source of truth for all civilization images, names, and
+          game content. Huge thanks to the aoe4guides team for their incredible
+          work keeping the community up to date.
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          You can also{" "}
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="text-primary underline underline-offset-2 focus-ring"
+          >
+            import builds from aoe4guides
+          </button>{" "}
+          right here — it's supported by default. They're great.
+        </p>
+      </section>
+
       <ImportModal open={importOpen} onOpenChange={setImportOpen} />
     </section>
   );

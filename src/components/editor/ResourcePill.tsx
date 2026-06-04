@@ -10,13 +10,13 @@ const META: Record<
   ResourceKey,
   { label: string; dot: string; full: string; icon?: string }
 > = {
-  food: { label: "F", dot: "bg-red-500", full: "Food", icon: "resources/food.png" },
-  wood: { label: "W", dot: "bg-green-600", full: "Wood", icon: "resources/wood.png" },
-  gold: { label: "G", dot: "bg-yellow-500", full: "Gold", icon: "resources/gold.png" },
-  stone: { label: "S", dot: "bg-gray-400", full: "Stone", icon: "resources/stone.png" },
+  food: { label: "F", dot: "bg-red-500", full: "Food", icon: "resources/food.webp" },
+  wood: { label: "W", dot: "bg-green-600", full: "Wood", icon: "resources/wood.webp" },
+  gold: { label: "G", dot: "bg-yellow-500", full: "Gold", icon: "resources/gold.webp" },
+  stone: { label: "S", dot: "bg-gray-400", full: "Stone", icon: "resources/stone.webp" },
   builder: { label: "B", dot: "bg-blue-500", full: "Builders", icon: "general/build.webp" },
-  oliveOil: { label: "O", dot: "bg-purple-500", full: "Olive Oil", icon: "resources/oliveoil.png" },
-  silver: { label: "Sv", dot: "bg-zinc-200", full: "Silver", icon: "resources/silver.png" },
+  oliveOil: { label: "O", dot: "bg-purple-500", full: "Olive Oil", icon: "resources/oliveoil.webp" },
+  silver: { label: "Sv", dot: "bg-zinc-200", full: "Silver", icon: "resources/silver.webp" },
 };
 
 type Props = {

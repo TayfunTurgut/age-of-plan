@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Upload } from "lucide-react";
 
+import OverlayPreview from "@/components/OverlayPreview";
 import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -105,6 +106,10 @@ export default function BuildOrderPlaceholder() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
+
+      <div className="mt-8">
+        <OverlayPreview bo={bo} />
       </div>
     </section>
   );

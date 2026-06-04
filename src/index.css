@@ -121,4 +121,57 @@
   .page-enter {
     animation: page-fade 220ms ease-out;
   }
+
+  @keyframes step-fade {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .step-enter {
+    animation: step-fade 150ms ease-out both;
+  }
+
+  @keyframes timer-pulse {
+    0%,
+    100% {
+      text-shadow: 0 0 0 transparent;
+    }
+    50% {
+      text-shadow: 0 0 8px hsl(var(--primary) / 0.85);
+    }
+  }
+
+  .timer-pulse {
+    animation: timer-pulse 1s ease-in-out infinite;
+  }
+}
+
+/* Runner popup mode: BuildOrderRunner adds `runner-overlay` to <html> so the
+ * popup window can shrink to its actual content extent. Without this, <main>'s
+ * default block-level stretch makes it fill innerWidth, so window.resizeTo()
+ * never shrinks below the opener's initial width. */
+html.runner-overlay,
+html.runner-overlay body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+}
+html.runner-overlay #root {
+  display: inline-block;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+html.runner-overlay main {
+  width: max-content;
+  /* Cap so long notes wrap instead of stretching the window arbitrarily. */
+  max-width: 480px;
 }
