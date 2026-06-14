@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2026-06-03T02:49:32.466Z",
+  "sources": {
+    "data": "https://aoe4guides.com — src/composables/builds/icons/json/*.json",
+    "images": "https://aoe4guides.com/assets/pictures/<category>/<file>.webp"
+  },
+  "counts": {
+    "civs": 23,
+    "entities": 819,
+    "icons": 772,
+    "uncovered": 2
+  }
+}

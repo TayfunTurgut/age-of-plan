@@ -1,0 +1,13 @@
+# Served by Cloudflare Workers static assets (honored like Pages _headers).
+#
+# The two script sha256 hashes whitelist the inline theme/font-size bootstrap
+# scripts in index.html. If you edit those scripts, recompute the hashes:
+#   python3 -c 'import re,hashlib,base64,sys; [print("sha256-"+base64.b64encode(hashlib.sha256(s.encode()).digest()).decode()) for s in re.findall(r"<script>(.*?)</script>", open("dist/index.html").read(), re.S)]'
+#
+# style-src 'unsafe-inline' is required for React inline style attributes
+# (dnd-kit transforms, font-size variable) and Google Fonts' stylesheet.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-QvBzruXwtzYdgIen1h6o3/Tww6ZJIz3YlYh6CASFnVk=' 'sha256-kjvCsJGf5EAE2PDqUlOk7ukDRhYMDtG8d78YU9zmYHs='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://aoe4guides.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
